@@ -65,10 +65,10 @@ class CollectionController() {
         val collections = mutableListOf<Map<String, *>>()
 
         // Please uncomment the following line when doing local development
-//         val resources = this::class.java.classLoader.getResources("static/sample-data/").toList()
+         val resources = this::class.java.classLoader.getResources("static/sample-data/").toList()
 
         // And comment following line if you want to run it from jar file
-        val resources = this::class.java.classLoader.getResources("sample-data").toList()
+//        val resources = this::class.java.classLoader.getResources("sample-data/").toList()
 
         resources.forEach { resource ->
             logger.info("Loading sample gRPC collections")
