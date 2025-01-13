@@ -30,13 +30,13 @@ class CollectionController() {
     fun loadCollection(): List<Map<String, *>> {
 
         // Load user collections from the filesystem
-        //val userCollection = getAllCollectionFromFolder(baseFolderPath)
+        val userCollection = getAllCollectionFromFolder(baseFolderPath)
 
         // Load sample collections from the classpath
-        val sampleCollection = getAllCollectionFromClasspath()
+        val sampleCollection = getAllCollectionFromSampleData()
 
         // Return combined collections
-        return sampleCollection
+        return userCollection + sampleCollection
         //return sampleCollection
     }
 
@@ -61,43 +61,17 @@ class CollectionController() {
         return collections
     }
 
-    fun getAllCollectionFromClasspath(): List<Map<String, *>> {
+    fun getAllCollectionFromSampleData(): List<Map<String, *>> {
         val collections = mutableListOf<Map<String, *>>()
-
-        // Please uncomment the following line when doing local development
-         val resources = this::class.java.classLoader.getResources("static/sample-data/").toList()
-
-        // And comment following line if you want to run it from jar file
-//        val resources = this::class.java.classLoader.getResources("sample-data/").toList()
-
-        resources.forEach { resource ->
-            logger.info("Loading sample gRPC collections")
-            println(resource.toURI())
-            try {
-                val directory = File(resource.toURI())
-                processResourceDirectory(directory, collections)
-                logger.info("Loaded sample gRPC collections ${resource.toURI()}")
+        try {
+            // Add sample data
+            constants.SAMPLE_DATA.forEach { sampleDataItem ->
+                collections.add(sampleDataItem)
             }
-            catch (e:Exception){
-                logger.error("Error Loading sample gRPC collections")
-            }
+        } catch (e: Exception) {
+            println("Error loading Sample data: ${e.message}")
         }
         return collections
-    }
-
-    fun processResourceDirectory(directory: File, collections: MutableList<Map<String, *>>) {
-        directory.listFiles()?.forEach { file ->
-            if (file.isDirectory) {
-                processResourceDirectory(file, collections)
-            } else if (file.name.endsWith(constants.GRPC_COLLECTION_FILE_EXTENSION)) {
-                val serviceName = directory.name
-                val requestName = file.name.removeSuffix(constants.GRPC_COLLECTION_FILE_EXTENSION)
-                val content = file.readText()
-                val collectionData = jsonMapper().readValue(content, object : TypeReference<Map<String, *>>() {})
-
-                addToCollections(collections, serviceName, requestName, collectionData)
-            }
-        }
     }
 
     fun addToCollections(
@@ -170,7 +144,7 @@ class CollectionController() {
 
     @DeleteMapping("/delete")
     fun deleteCollection(@RequestBody collection: Map<String, String>): Map<String, String> {
-        val collectionName = collection["serviceName"]
+        val collectionName = collection["collectionName"]
         val method = collection["method"]
         val requestName = method?.substring(method.lastIndexOf(".") + 1)
 
@@ -200,7 +174,7 @@ class CollectionController() {
     }
 
     fun isSampleCollection(collectionName: String, requestName: String): Boolean {
-        val sampleCollections = getAllCollectionFromClasspath() // Load sample data from classpath
+        val sampleCollections = getAllCollectionFromSampleData() // Load sample data from classpath
         return sampleCollections.any { collection ->
             val collectionTitle = collection["title"]
             val items = collection["items"] as? List<Map<String, *>>

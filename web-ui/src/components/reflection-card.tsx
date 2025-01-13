@@ -113,7 +113,7 @@ export function ReflectionCardWithForm() {
     const deleteGrpcRequest = async () => {
         setLoading(true);
         const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.collectionBaseUrl + appConfig.collectionDeleteUrl}`
-        const payload = { serviceName: host?.split('.')[0], method: method }
+        const payload = { collectionName: host?.split('.')[0], method: method }
         const response = await fetch(serviceUrl, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json', ...metaData },
