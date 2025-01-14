@@ -25,6 +25,7 @@ class ReflectionController {
     fun defaultEndpoint(): String {
         return "Default endpoint for reflection metadata"
     }
+
     @GetMapping("/{host}")
     fun fetchReflectionDetails(@PathVariable host: String): Any {
         val channel = createChannel(host)
@@ -36,11 +37,11 @@ class ReflectionController {
             // Step 1: List all services
             val services = listServices(reflectionStub)
             if (services.isEmpty()) {
-                return mapOf("error" to "No services found.")
+                return mapOf("error" to "Error Getting Service and methods for host:  $host. You can correct the host address, port or check if the service is running.")
             }
 
             // Step 2: Request file descriptors for each service
-            val servicesWithMethods : MutableList<Any> = mutableListOf()
+            val servicesWithMethods: MutableList<Any> = mutableListOf()
             services.forEach { service ->
                 val fileDescriptors = getFileDescriptorsForService(reflectionStub, service)
                 fileDescriptors.forEach { descriptor ->
@@ -52,7 +53,7 @@ class ReflectionController {
                             "functions" to serviceProto.methodList.map {
                                 mapOf(
                                     "functionName" to it.name,
-                                    "detailName" to service + "."+ it.name,
+                                    "detailName" to service + "." + it.name,
                                     "inputType" to it.inputType,
                                     "outputType" to it.outputType
                                 )
@@ -73,6 +74,38 @@ class ReflectionController {
         }
     }
 
+    @GetMapping("/{host}/{service}/{functionInput}")
+    fun fetchReflectionServiceFunctionDetails(
+        @PathVariable host: String,
+        @PathVariable service: String,
+        @PathVariable functionInput: String
+    ): Any {
+        val channel = createChannel(host)
+        val reflectionStub = ServerReflectionGrpc.newStub(channel)
+        val request = ServerReflectionRequest.newBuilder()
+            .setFileContainingSymbol(service)
+            .build()
+
+        return try {
+            logger.info("Requesting reflection data for service: $service from host: $host")
+            val descriptors = getReflectionData(reflectionStub, request)
+            if (descriptors.isEmpty()) {
+                mapOf("error" to "No reflection data received. Verify the service name.")
+            } else {
+                parseAndFormatDescriptors(descriptors, functionInput)
+            }
+        } catch (e: Exception) {
+            logger.error("Error occurred: ${e.message}", e)
+            mapOf("error" to (e.message ?: "An unknown error occurred."))
+        } finally {
+            try {
+                channel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
+            } catch (e: InterruptedException) {
+                logger.error("Error during channel shutdown: ${e.message}", e)
+            }
+        }
+    }
+
     // Helper function to list all services
     private fun listServices(reflectionStub: ServerReflectionGrpc.ServerReflectionStub): List<String> {
         val request = ServerReflectionRequest.newBuilder()
@@ -80,7 +113,7 @@ class ReflectionController {
             .build()
 
         val services = mutableListOf<String>()
-       val latch = CountDownLatch(1)
+        val latch = CountDownLatch(1)
 
         reflectionStub.serverReflectionInfo(object : StreamObserver<ServerReflectionResponse> {
             override fun onNext(response: ServerReflectionResponse) {
@@ -91,11 +124,11 @@ class ReflectionController {
 
             override fun onError(t: Throwable) {
                 logger.error("Error during listing services: ${t.message}", t)
-             //   latch.countDown()
+                latch.countDown()
             }
 
             override fun onCompleted() {
-             //   latch.countDown()
+                latch.countDown()
             }
         }).onNext(request)
 
@@ -134,38 +167,6 @@ class ReflectionController {
 
         latch.await(1, TimeUnit.SECONDS)
         return descriptors
-    }
-
-    @GetMapping("/{host}/{service}")
-    fun fetchReflectionServiceFunctionDetails(@PathVariable host: String, @PathVariable service: String): Any {
-        val channel = createChannel(host)
-        val segments = service.split(".")
-        val serviceBasePath = segments.dropLast(2).joinToString(".")
-        val functionName = segments.last()
-
-        val reflectionStub = ServerReflectionGrpc.newStub(channel)
-        val request = ServerReflectionRequest.newBuilder()
-            .setFileContainingSymbol(service)
-            .build()
-
-        return try {
-            logger.info("Requesting reflection data for service: $service from host: $host")
-            val descriptors = getReflectionData(reflectionStub, request)
-            if (descriptors.isEmpty()) {
-                mapOf("error" to "No reflection data received. Verify the service name.")
-            } else {
-                parseAndFormatDescriptors(descriptors, ".${serviceBasePath}.${functionName}Request")
-            }
-        } catch (e: Exception) {
-            logger.error("Error occurred: ${e.message}", e)
-            mapOf("error" to (e.message ?: "An unknown error occurred."))
-        } finally {
-            try {
-                channel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
-            } catch (e: InterruptedException) {
-                logger.error("Error during channel shutdown: ${e.message}", e)
-            }
-        }
     }
 
     private fun createChannel(host: String): ManagedChannel {
@@ -286,7 +287,7 @@ class ReflectionController {
         )
     }
 
-    // Extract the field information from the messagetype of proto
+    // Extract the field information from the messageType of proto
     fun extractFieldInformation(fields: List<DescriptorProtos.FieldDescriptorProto>): List<Map<String, Any>> {
         return fields.map { field ->
             mapOf(
@@ -313,7 +314,7 @@ class ReflectionController {
         }
     }
 
-    // Extract the enum information from the the proto file
+    // Extract the enum information from the proto file
     fun extractEnumFromFile(
         fileProto: DescriptorProtos.FileDescriptorProto,
         packageName: String

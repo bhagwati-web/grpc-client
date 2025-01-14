@@ -23,6 +23,7 @@ import {
 import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext"
 import { appConfig } from "@/config/config"
 import { getReflections, saveReflections } from "@/utils/app-utils"
+import { toast } from "@/hooks/use-toast"
 
 export function GrpcServerInput() {
     const {
@@ -66,6 +67,12 @@ export function GrpcServerInput() {
         const response = await fetch(serviceUrl)
         const data = await response.json()
 
+        if (data.error) {
+            toast({ title: "Error!", description: data?.error, variant: "destructive"  })
+            setLoading(false);
+            return;
+        }
+
         setReflections(data)
         saveReflections(host, data)
         setLoading(false);
@@ -84,10 +91,10 @@ export function GrpcServerInput() {
                             <Label htmlFor="hostInput">GRPC Endpoint</Label>
                             <div className="flex flex-col">
                                 <div className="flex-1 w-full">
-                                    <Input id="hostInput" value={host ? host : ''} onChange={handleHostChange} type="text" placeholder="GRPC Endpoint" />
+                                    <Input id="hostInput" value={host ? host : ''} onChange={handleHostChange} type="text" placeholder="Please enter gRPC endpoint and hit enter" />
                                 </div>
-                                {host && <div className="flex-1 w-full">
-                                    <Button variant={"link"} onClick={(event) => fetchGrpcReflections(event, true)} type="submit">{loading ? 'Please wait...' : 'Fetch/Refetch the methods?'}</Button>
+                                {host && <div className="flex-1 w-full mt-2">
+                                    <Button variant={"link"} onClick={(event) => fetchGrpcReflections(event, true)} type="submit">{loading ? 'Please wait...' : 'Fetch/Refetch the methods'}</Button>
                                 </div>}
                             </div>
                         </div>

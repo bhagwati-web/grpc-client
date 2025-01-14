@@ -77,4 +77,44 @@ export function getReflections(host: string) {
     const sessionStorageReflections = sessionStorage.getItem(DEFAULT_CONFIG.sessionStorageReflections);
     const reflections = JSON.parse(sessionStorageReflections || '{}');
     return reflections[String(host)];
-}   
+}
+
+export function getServiceNameFromMethod(method: string, type : string = 'full') {
+    const parts = method?.split('.');
+    if (type === 'short') {
+        return parts[parts.length - 2];
+    }
+    
+    return parts.slice(0, -1).join('.');
+}
+
+export function getMethodNameFromMethodURL(method: string) {
+    const parts = method?.split('.');
+    return parts[parts.length - 1];
+}
+
+export function getMethodInputType(host: string, method: string) : string {
+
+    if (!host || !method) {
+        return '';
+        console.error("Host or method is not provided");
+    }
+   
+    let methodName = getMethodNameFromMethodURL(method);
+    let serviceName = getServiceNameFromMethod(method, 'short');
+    let methodInputType = "";
+
+    getReflections(host).forEach((serviceItem: any) => {
+        if (serviceItem.serviceName === serviceName) {
+            serviceItem.functions.forEach((functionItem: any) => {
+                if (functionItem.functionName === methodName) {
+                    methodInputType = functionItem.inputType;
+                }
+            });
+        }
+    });
+
+    return methodInputType;
+}
+
+

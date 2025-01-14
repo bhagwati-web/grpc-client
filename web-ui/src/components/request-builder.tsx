@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/card"
 import { appConfig } from "@/config/config";
 import { Layers2, Wrench, X } from "lucide-react";
+import { getMethodInputType, getServiceNameFromMethod } from "@/utils/app-utils";
+import { toast } from "@/hooks/use-toast";
 
 export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilder: (value: boolean) => void }) {
     const {
@@ -69,10 +71,13 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
     const fetchMetaData = async () => {
         if (serverInfo.host && serverInfo.method) {
             setLoading(true);
-            const functionMetaData = await fetch(`${appConfig.serviceBaseUrl}${appConfig.grpcMetaData}/${serverInfo.host}/${serverInfo.method}`)
+            let functionInput =  getMethodInputType(serverInfo.host, serverInfo.method);
+            let servicenName = getServiceNameFromMethod(serverInfo.method, 'full');
+            const functionMetaData = await fetch(`${appConfig.serviceBaseUrl}${appConfig.grpcMetaData}/${serverInfo.host}/${servicenName}/${functionInput}`)
             const data = await functionMetaData.json()
             if (data.error) {
                 console.error(data.error);
+                toast({ title: "Error!", description: data?.error, variant: "destructive"  })
                 setLoading(false);
                 return;
             }

@@ -26,29 +26,18 @@ class GrpcController {
 
     @PostMapping("/call")
     fun makeGrpcCall(@RequestBody grpcRequest: GrpcRequest, @RequestHeader allHeaders: Map<String, String>): Any {
-        val authorizationHeader = allHeaders["authorization"]
-        val clientIdHeader = allHeaders["client-id"]
-        val messageRequest = jsonMapper().writeValueAsString(grpcRequest.message)
-
-        // Build the grpc-url command
-        val command = listOf(
-            constants.GRPC_URL,
-            "-H", "Authorization: $authorizationHeader",
-            "-H", "client-Id:$clientIdHeader",
-            "-d", messageRequest,
-            grpcRequest.host,
-            grpcRequest.method
+        val command = buildGrpcUrlCommand(
+            grpcRequest,
+            allHeaders
         )
+
         val output = StringBuffer()
         val errorOutput = StringBuffer()
         try {
-            println("\n\nExecuting grpc-url command: ${command.joinToString(" ")}\n\n")
+            println("\nStarted gRPC Execution\n")
+            println(command.joinToString(" "))
             val timeout = 10L // Timeout in seconds
-
-            val process = ProcessBuilder(command)
-                .start()
-
-
+            val process = ProcessBuilder(command).start()
             val bufferSize = 8192 * 10 // Define the buffer size explicitly
 
             val outputReader = Thread {
@@ -69,9 +58,9 @@ class GrpcController {
             val finished = process.waitFor(timeout, TimeUnit.SECONDS)
             if (!finished) {
                 process.destroy()
-                println("Process timed out after $timeout seconds.")
+                println("\nProcess timed out after $timeout seconds.")
             } else {
-                println("Process completed successfully.")
+                println("\nProcess completed successfully.")
             }
 
             // Wait for threads and process to finish
@@ -88,10 +77,11 @@ class GrpcController {
             // Finally, check the process exit code
             val exitCode = process.waitFor()
             if (exitCode != 0) {
-                println("\n\nError: ${output}\n\n")
-                return mapOf("error" to output.toString())
+                println("\n\nError: There is a an error executing the request\n${errorOutput}\n\n")
+                return mapOf("error" to errorOutput)
             }
         } catch (e: Exception) {
+            println("\n\nError: ${e.message}\n\n")
             return mapOf("error" to e.message.toString())
         }
 
@@ -102,78 +92,47 @@ class GrpcController {
         }
     }
 
-    // Deprecated
-    @GetMapping("/reflections/{host}")
-    fun fetchReflectionServices(@PathVariable host: String): Any {
-        val command = listOf(constants.GRPC_URL, host, "list")
-        // get all services first
-        val services = fetchReflections(command)
-
-        if (services.size == 1 && services[0].containsKey("error")) {
-            return emptyList<String>()
+    fun buildGrpcUrlCommand(grpcRequest: GrpcRequest, allHeaders: Map<String, String>): List<String> {
+        if (grpcRequest.host == "" || grpcRequest.method == "" || grpcRequest.message == "") {
+            return emptyList()
         }
 
-        // get all functions for each service
-        val servicesWithFunctions = services.map {
-            val serviceName = it["serviceName"]
-            val serviceDetails = it["detailName"]
-            val functionCommand = listOf(constants.GRPC_URL, host, "list", serviceDetails)
-            val functions = fetchReflections(functionCommand)
+        val messageRequest = jsonMapper().writeValueAsString(grpcRequest.message)
+        val host = grpcRequest.host
+        val method = grpcRequest.method
 
-            if (functions.size == 1 && functions[0].containsKey("error"))
-                mapOf(
-                    "serviceName" to serviceName,
-                    "serviceDetails" to serviceDetails,
-                    "functions" to emptyList<String>()
-                )
-            else
-                mapOf("serviceName" to serviceName, "serviceDetails" to serviceDetails, "functions" to functions)
+        val authHeader = allHeaders["authorization"]
+
+        // Start building the grp-curl command
+        val command = mutableListOf<String>()
+
+        // Add common headers
+        command.add(constants.GRPC_URL)  // The grp-curl command
+
+        // Conditionally add -plaintext for insecure connections
+        if (!host.contains(":443") || !host.contains("443")) {
+            command.add("-plaintext")
         }
-        return servicesWithFunctions
+
+
+        grpcRequest.metaData?.forEach {
+            it.forEach { (key, value) ->
+                command.add("-H")
+                command.add("$key:$value")
+            }
+        }
+
+        if(authHeader != null) {
+            command.add("-H")
+            command.add("authorization:$authHeader")
+        }
+
+        command.add("-d")
+        command.add(messageRequest)
+        command.add(host)
+        command.add(method)
+
+        return command
     }
 
-    // Deprecated
-    fun fetchReflections(command: List<String?>): List<Map<String, String>> {
-        val output = StringBuffer()
-        try {
-            println("Executing grpc-url command: ${command.joinToString(" ")}")
-            val process = ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start()
-            process.waitFor()
-            BufferedReader(InputStreamReader(process.inputStream)).use {
-                var line: String? = it.readLine()
-                while (line != null) {
-                    if (line.isNotBlank()) {
-                        if (output.isEmpty()) {
-                            output.append(line) // Append without a comma for the first element
-                        } else {
-                            output.append(", $line") // Add a comma for subsequent elements
-                        }
-                    }
-                    line = it.readLine()
-                }
-            }
-            val exitCode = process.waitFor()
-            if (exitCode != 0) {
-                println("\n\nError: ${output}\n\n")
-                return listOf(mapOf("error" to output.toString()))
-            }
-        } catch (e: Exception) {
-            return listOf(mapOf("error" to e.message.toString()))
-        }
-
-        val outputArray = output.toString().split(",")
-        val outputArrayMap = outputArray.map {
-            val serviceName = it.split(".").last()
-            val detailName = it
-
-            // check if the command is containing the service and set the name based on that
-            if (command.size > 3 && command[3] != "")
-                mapOf("functionName" to serviceName, "detailName" to detailName.trim())
-            else
-                mapOf("serviceName" to serviceName, "detailName" to detailName.trim())
-        }
-        return outputArrayMap
-    }
 }

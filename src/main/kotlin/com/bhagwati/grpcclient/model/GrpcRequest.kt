@@ -1,7 +1,8 @@
 package com.bhagwati.grpcclient.model
 
 class GrpcRequest {
-    var host: String? = null
-    var method: String? = null
+    var host: String = ""
+    var method: String = ""
     var message: Any? = null
+    var metaData: List<Map<String, String>>? = null
 }

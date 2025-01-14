@@ -29,6 +29,7 @@ import { RequestBuilder } from "@/components/request-builder"
 
 export function ReflectionCardWithForm() {
     const [showRequestBuilder, setShowRequestBuilder] = React.useState(false);
+    const [grpcResponse, setGrpcResponse] = React.useState(null);
     const grpcResponseRef = React.useRef(null);
     const {
         loading,
@@ -55,15 +56,15 @@ export function ReflectionCardWithForm() {
         if (sessionStorageResponses) {
             setGrpcResponse(getGrpcResponse(host, method))
         }
-    }, [host, method])    
+    }, [host, method])
 
 
-    const [grpcResponse, setGrpcResponse] = React.useState(null);
 
     const getGrpcRespone = async () => {
         setLoading(true);
         const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.grpcBaseEndpoint + appConfig.grpcCallEndpoint}`
-        const payload = { message, host, method: method }
+        const requestMetaData = metaData ? Object.entries(metaData).map(([key, value]) => ({ [key]: value })) : []
+        const payload = { message, host, method, metaData: requestMetaData }
         const response = await fetch(serviceUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...metaData },
@@ -170,10 +171,10 @@ export function ReflectionCardWithForm() {
                                                 <AccordionItem value="item-2">
                                                     <AccordionTrigger>3. Add Message</AccordionTrigger>
                                                     <AccordionContent>
-                                                        <AddMessage 
-                                                        setShowRequestBuilder={setShowRequestBuilder} 
-                                                        showRequestBuilder={showRequestBuilder} 
-                                                        isReady={isReady} />
+                                                        <AddMessage
+                                                            setShowRequestBuilder={setShowRequestBuilder}
+                                                            showRequestBuilder={showRequestBuilder}
+                                                            isReady={isReady} />
                                                     </AccordionContent>
                                                 </AccordionItem>
                                             </Accordion>
