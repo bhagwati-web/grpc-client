@@ -65,7 +65,7 @@ class GrpcController {
 
             // Wait for threads and process to finish
             while (process.isAlive) {
-                // Check every 100ms
+                // Check every 300ms
                 Thread.sleep(300)
             }
 
@@ -109,7 +109,7 @@ class GrpcController {
         command.add(constants.GRPC_URL)  // The grp-curl command
 
         // Conditionally add -plaintext for insecure connections
-        if (!host.contains(":443") || !host.contains("443")) {
+        if (!host.contains("443") && !host.contains("https")) {
             command.add("-plaintext")
         }
 

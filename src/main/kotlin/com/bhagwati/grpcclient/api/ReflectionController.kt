@@ -221,7 +221,6 @@ class ReflectionController {
         return responseBuilder
     }
 
-
     private fun parseAndFormatDescriptors(descriptors: List<ByteArray>, functionName: String): Any {
         val parsedDescriptors = descriptors.mapNotNull { descriptorBytes ->
             parseDescriptor(descriptorBytes)

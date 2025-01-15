@@ -18,8 +18,6 @@ class CollectionController() {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     private val baseFolderPath = Paths.get(System.getProperty("user.home"), constants.GRPC_COLLECTION_LOCATION)
-    private val sampleFolderPath: String =
-        constants.GRPC_COLLECTION_LOCATION_SAMPLE // This will be the folder path for classpath resources
 
     init {
         // Ensure that the base folder exists
