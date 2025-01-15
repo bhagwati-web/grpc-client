@@ -100,7 +100,6 @@ class GrpcController {
         val messageRequest = jsonMapper().writeValueAsString(grpcRequest.message)
         val host = grpcRequest.host
         val method = grpcRequest.method
-
         val authHeader = allHeaders["authorization"]
 
         // Start building the grp-curl command
@@ -114,6 +113,7 @@ class GrpcController {
             command.add("-plaintext")
         }
 
+        val authHeaderFromMeta = grpcRequest.metaData?.firstNotNullOfOrNull { it["authorization"] }
 
         grpcRequest.metaData?.forEach {
             it.forEach { (key, value) ->
@@ -122,7 +122,8 @@ class GrpcController {
             }
         }
 
-        if(authHeader != null) {
+        // check if the authorization header is present in meta data else find it from headers and put it in the command
+        if (authHeaderFromMeta == null && authHeader != null) {
             command.add("-H")
             command.add("authorization:$authHeader")
         }

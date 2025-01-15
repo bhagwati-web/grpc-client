@@ -67,7 +67,7 @@ export function ReflectionCardWithForm() {
         const payload = { message, host, method, metaData: requestMetaData }
         const response = await fetch(serviceUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...metaData },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
         const data = await response.json()
