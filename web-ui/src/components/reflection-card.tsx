@@ -84,7 +84,7 @@ export function ReflectionCardWithForm() {
         // prepare an object containing the response host and method and then save it to the session storage
         saveGrpcResponse(host, method, response);
         setGrpcResponse(response);
-        toast({ title: "Finished!", description: `Response saved to your local storage, so that you can reuse it later` })
+        toast({ title: "Finished!", description: `Response also cached, so that you can reuse it later` })
     }
 
     const saveGrpcRequest = async () => {
@@ -100,10 +100,10 @@ export function ReflectionCardWithForm() {
         })
         const data = await response.json()
         if (data.status === 'success') {
-            toast({ title: "Success!", description: `${data.message}. You can reuse this request later` })
+            toast({ title: "Success!", description: data.message })
         }
         else {
-            toast({ title: "Error!", description: `${data.message}`, variant: "destructive" })
+            toast({ title: "Error!", description: data.message, variant: "destructive" })
         }
         setLoading(false);
         if (setReload) {

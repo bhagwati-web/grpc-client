@@ -134,7 +134,7 @@ class CollectionController() {
         }
 
         return if (isNewFile) {
-            mapOf("message" to "Collection saved successfully", "status" to constants.GgrcResponseStatus.SUCCESS)
+            mapOf("message" to "Collection saved successfully. You can reuse this request later.", "status" to constants.GgrcResponseStatus.SUCCESS)
         } else {
             mapOf("message" to "Collection updated successfully", "status" to constants.GgrcResponseStatus.SUCCESS)
         }

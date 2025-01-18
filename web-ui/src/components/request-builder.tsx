@@ -5,6 +5,7 @@ import { DynamicField } from "@/components/dynamic-components";
 import {
     Card,
     CardContent,
+    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
@@ -60,6 +61,7 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
 
             return newData;
         });
+        //setServerInfo({ ...serverInfo, message: formData });
     };
 
     const handleSubmit = (e: any) => {
@@ -71,13 +73,13 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
     const fetchMetaData = async () => {
         if (serverInfo.host && serverInfo.method) {
             setLoading(true);
-            let functionInput =  getMethodInputType(serverInfo.host, serverInfo.method);
+            let functionInput = getMethodInputType(serverInfo.host, serverInfo.method);
             let servicenName = getServiceNameFromMethod(serverInfo.method, 'full');
             const functionMetaData = await fetch(`${appConfig.serviceBaseUrl}${appConfig.grpcMetaData}/${serverInfo.host}/${servicenName}/${functionInput}`)
             const data = await functionMetaData.json()
-            if (data.error) {
+            if (data && data.error) {
                 console.error(data.error);
-                toast({ title: "Error!", description: data?.error, variant: "destructive"  })
+                toast({ title: "Error!", description: data.error, variant: "destructive" })
                 setLoading(false);
                 return;
             }
@@ -109,35 +111,41 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
     }
 
     return (
-        <Card className="flex-1" ref={builderRef}>
-            <CardHeader>
-                <CardTitle>
-                    <div className="flex items-center gap-2">
-                        <Wrench />
-                        Build Request
-                    </div>
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-                <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex flex-col w-full">
+            <Card className="flex-1" ref={builderRef}>
+                <CardHeader>
+                    <CardTitle className="flex justify-between">
+                        <div className="flex items-center gap-2">
+                            <Wrench />
+                            Build Request
+                        </div>
+                        <Button onClick={(e) => {
+                            e.preventDefault();
+                            setShowRequestBuilder(false)
+                        }} className="" variant={"outline"}><X /> Close Builder</Button>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
                     {serviceResponse.fields?.map((field: any, index: any) => (
                         <DynamicField
                             isRootElement={true}
                             key={index}
                             field={field}
                             onChange={handleChange}
+                            formData={formData}
                         />
                     ))}
-                    <div className="mt-4 space-x-2">
+
+                </CardContent>
+                <CardFooter className="flex justify-between">
                         <Button type="submit"><Layers2 />Update Message</Button>
                         <Button onClick={(e) => {
                             e.preventDefault();
                             setShowRequestBuilder(false)
                         }} className="" variant={"outline"}><X /> Close Builder</Button>
-                    </div>
-                </form>
-            </CardContent>
-        </Card>
+                </CardFooter>
+            </Card>
+        </form>
     )
 }
 
