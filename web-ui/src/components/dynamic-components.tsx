@@ -25,7 +25,7 @@ interface DynamicFieldProps {
 export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isRootElement, formData }) => {
     const { name, type, typeName, enumValues, nestedMessage, isArray, description } = field;
     const [isExpanded, setIsExpanded] = useState(formData && formData[name] ? true : false);
-    const [showNestedFields, setShowNestedFields] = useState(formData && formData[name] ? true : false);
+    //const [showNestedFields, setShowNestedFields] = useState(formData && formData[name] ? true : false);
     const [arrayItems, setArrayItems] = useState(isArray ? formData[name] : []);
     const [showAddItem, setShowAddItem] = useState(false); // To control Add Item button visibility
     //const [selectedValue, setSelectedValue] = useState(enumValues ? enumValues[0].number : "");
@@ -54,17 +54,17 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isR
         setArrayItems([...arrayItems, {}]);
     };
 
-    const handleDeleteFromMessage = (value: any) => {
-        // delete that key from the formData
-        if (value === false && formData[name]) {
-            isArray ? onChange(name, []) : onChange(name, {});
-            setIsExpanded(false);
-        }
-        else {
-            setIsExpanded(true);
-        }
-        setShowNestedFields(value)
-    };
+    // const handleDeleteFromMessage = (value: any) => {
+    //     // delete that key from the formData
+    //     if (value === false && formData[name]) {
+    //         isArray ? onChange(name, []) : onChange(name, {});
+    //         setIsExpanded(false);
+    //     }
+    //     else {
+    //         setIsExpanded(true);
+    //     }
+    //     //setShowNestedFields(value)
+    // };
 
 
     const handleRemoveItem = (e: any, index: any) => {
