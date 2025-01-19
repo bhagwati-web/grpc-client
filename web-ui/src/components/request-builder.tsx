@@ -33,6 +33,38 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
     }, [serviceResponse]);
 
 
+    // Similar to handle change, suppose I want remove that key from the formData with the help of a name and field. 
+    // I can do that by using the following code:
+    const handleRemove = (fieldName: any) => {
+        setFormData((prevData: any) => {
+            const newData = { ...prevData };
+            const keys = fieldName.split('.');
+            let current: any = newData;
+
+            keys.forEach((key: any, index: any) => {
+                if (key.includes('[')) {
+                    const [arrayKey, arrayIndex] = key.split(/[\[\]]/).filter(Boolean);
+                    if (!current[arrayKey]) current[arrayKey] = [];
+                    if (!current[arrayKey][arrayIndex]) current[arrayKey][arrayIndex] = {};
+                    if (index === keys.length - 1) {
+                        delete current[arrayKey][arrayIndex];
+                    } else {
+                        current = current[arrayKey][arrayIndex];
+                    }
+                } else {
+                    if (index === keys.length - 1) {
+                        delete current[key];
+                    } else {
+                        if (!current[key]) current[key] = {};
+                        current = current[key];
+                    }
+                }
+            });
+
+            return newData;
+        });
+    }
+
     const handleChange = (fieldName: any, value: any) => {
         setFormData((prevData: any) => {
             const newData = { ...prevData };
@@ -65,9 +97,16 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
     };
 
     const handleSubmit = (e: any) => {
+        setLoading(true);
         e.preventDefault();
         console.log(JSON.stringify(formData, null, 2));
         setServerInfo({ ...serverInfo, message: formData });
+    
+        setTimeout(() => {
+            setLoading(false);
+            //setShowRequestBuilder(false);
+        }, 1000);
+
     };
 
     const fetchMetaData = async () => {
@@ -119,30 +158,36 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
                             <Wrench />
                             Build Request
                         </div>
-                        <Button onClick={(e) => {
-                            e.preventDefault();
-                            setShowRequestBuilder(false)
-                        }} className="" variant={"outline"}><X /> Close Builder</Button>
+                        <div className="flex items-center gap-2">
+                            <Button type="submit"><Layers2 />Update Message</Button>
+
+                            <Button onClick={(e) => {
+                                e.preventDefault();
+                                setShowRequestBuilder(false)
+                            }} className="" variant={"outline"}><X /> Close Builder</Button>
+                        </div>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                    {serviceResponse.fields?.map((field: any, index: any) => (
-                        <DynamicField
+                <CardContent className="space-y-2">                    
+                        {serviceResponse.fields?.map((field: any, index: any) => (
+                            <DynamicField
                             isRootElement={true}
                             key={index}
                             field={field}
                             onChange={handleChange}
+                            onRemove={handleRemove}
                             formData={formData}
-                        />
-                    ))}
-
+                            />
+                        ))}
                 </CardContent>
                 <CardFooter className="flex justify-between">
+                    <div className="flex items-center gap-2">
                         <Button type="submit"><Layers2 />Update Message</Button>
                         <Button onClick={(e) => {
                             e.preventDefault();
                             setShowRequestBuilder(false)
                         }} className="" variant={"outline"}><X /> Close Builder</Button>
+                    </div>
                 </CardFooter>
             </Card>
         </form>

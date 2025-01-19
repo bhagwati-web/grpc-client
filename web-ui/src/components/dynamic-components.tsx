@@ -12,24 +12,35 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-
+import { getClassNameForField } from "@/utils/app-utils";
 
 interface DynamicFieldProps {
     field: any;
     onChange: any;
+    onRemove: any;
     isRootElement: any;
     formData: any;
 }
 
+interface DynamicFieldHeader {
+    field: any;
+    isExpanded: any;
+    setIsExpanded: any;
+}
+
+
 // Helper component to render the form fields dynamically
-export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isRootElement, formData }) => {
-    const { name, type, typeName, enumValues, nestedMessage, isArray, description } = field;
+export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, onRemove, isRootElement, formData }) => {
+    const { name, type, enumValues, nestedMessage, isArray, description } = field;
     const [isExpanded, setIsExpanded] = useState(formData && formData[name] ? true : false);
-    //const [showNestedFields, setShowNestedFields] = useState(formData && formData[name] ? true : false);
-    const [arrayItems, setArrayItems] = useState(isArray ? formData[name] : []);
-    const [showAddItem, setShowAddItem] = useState(false); // To control Add Item button visibility
+    const [isEnabled, setIsEnabled] = useState(formData && formData[name] ? true : false);
+    const [arrayItems, setArrayItems] = useState(formData && formData[name] ? formData[name] : []);
+    // const [showAddItem, setShowAddItem] = useState(false); // To control Add Item button visibility
     //const [selectedValue, setSelectedValue] = useState(enumValues ? enumValues[0].number : "");
     const colorRef = React.useRef('');
+
+    if (name == 'repeated_enum_annotation')
+        console.log('field Info', field, formData, name);
 
     useEffect(() => {
         if (colorRef.current === '')
@@ -54,17 +65,15 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isR
         setArrayItems([...arrayItems, {}]);
     };
 
-    // const handleDeleteFromMessage = (value: any) => {
-    //     // delete that key from the formData
-    //     if (value === false && formData[name]) {
-    //         isArray ? onChange(name, []) : onChange(name, {});
-    //         setIsExpanded(false);
-    //     }
-    //     else {
-    //         setIsExpanded(true);
-    //     }
-    //     //setShowNestedFields(value)
-    // };
+    const handleDeleteFromMessage = (value: any) => {
+        console.log("value", value);
+        // delete that key from the formData
+        if (value === false && formData[name]) {
+            onRemove(name);
+        }
+        setArrayItems([]);
+        setIsEnabled(value)
+    };
 
 
     const handleRemoveItem = (e: any, index: any) => {
@@ -89,17 +98,24 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isR
         else {
             defaultElements = { marginBottom: '5px', marginTop: '5px', padding: '5px' }
         }
-        messageElement = { margin: isRootElement ? '0px' : '10px', padding: '5px', background: `${colorRef.current}` }
+        messageElement = { margin: isRootElement ? '0px' : '10px', padding: '10px', background: `${colorRef.current}` }
 
         return { defaultElements, messageElement }[String(elemType)] || defaultElements;
 
     }
 
     const getFormFieldValue = (fieldName: string) => {
-        console.log('fieldName', fieldName);
-        console.log('formData', formData);
         let current: any = formData;
-        current = current[fieldName] ? current[fieldName] : '';
+        const keys = fieldName.split('.');
+        console.log("object keys", keys);
+        keys.forEach((key: any) => {
+            if (key.includes('[')) {
+                const [arrayKey, arrayIndex] = key.split(/[\[\]]/).filter(Boolean);
+                current = current[arrayKey] ? current[arrayKey][arrayIndex] : '';
+            } else {
+                current = current[fieldName] ? current[fieldName] : '';
+            }
+        });
         return current
     }
 
@@ -107,109 +123,51 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isR
 
         if (isArray) {
             return (
-                <div className="mt-4 rounded-md border border-gray-300" style={getStyleforField('defaultElements')}>
-                    <div className="flex items-center space-x-2">
-                        <Label className="cursor-pointer">
-                            {showAddItem ? <Minus /> : <Plus />}
-                        </Label>
-                        <Checkbox
-                            onCheckedChange={(value: any) => setShowAddItem(value)}
-                        />
-                        <Label
-                            className="cursor-pointer"
-                            title={description}
-                        >
-                            {name}
-                        </Label>
-                    </div>
-                    {showAddItem && (
-                        <>
-                            {arrayItems.map((_: any, index: number) => (
-                                <div key={index} className="flex items-end space-x-2 mb-2">
-                                    <Input
-                                        type="text"
-                                        placeholder={name}
-                                        onChange={(e) => onChange(`${name}[${index}]`, e.target.value)}
-                                        value={getFormFieldValue(`${name}[${index}]`)}
-                                    />
-                                    <Button style={{ margin: '20px' }} onClick={(e) => handleRemoveItem(e, index)}>X</Button>
-                                </div>
-                            ))}
-                            <Button onClick={handleAddItem}>Add Item</Button>
-                        </>
+                <div className={getClassNameForField(field) + " bg-white"} style={getStyleforField('defaultElements')}>
+                    <FieldHeader isExpanded={isExpanded} setIsExpanded={setIsExpanded} field={field} />
+                    {isExpanded && (
+                        <div className="flex space-x-4 mt-2 items-center">
+                            <div className=" flex-col space-x-2">
+                                <Checkbox id={name} onCheckedChange={(value) => handleDeleteFromMessage(value)} checked={isEnabled} />
+                            </div>
+                            <div className={getClassNameForField(field)} style={getStyleforField('defaultElements')}>
+                                {arrayItems && arrayItems.map((_: any, index: number) => (
+                                    <div key={index} className="flex min-w-48 max-w-96 items-end space-x-2 mb-2">
+                                        <Input
+                                            type="text"
+                                            placeholder={name}
+                                            onChange={(e) => onChange(`${name}[${index}]`, e.target.value)}
+                                            value={getFormFieldValue(`${name}[${index}]`)}
+                                            disabled={!isEnabled}
+                                        />
+                                        <ButtonRemove onClick={(e: any) => handleRemoveItem(e, index)} isEnabled={isEnabled} />
+                                    </div>
+                                ))}
+                                <ButtonAdd onClick={handleAddItem} isEnabled={isEnabled} />
+                            </div>
+                        </div>
+
                     )}
                 </div>
             );
         }
 
         return (
-            <div className="mt-4 min-w-48 max-w-96 rounded-md border border-gray-300" style={getStyleforField('defaultElements')}>
-                <Label htmlFor={name} title={description}>{name}</Label>
-                <Input
-                    type="text"
-                    id={name}
-                    placeholder={name}
-                    onChange={(e) => onChange(name, e.target.value)}
-                    value={getFormFieldValue(name)}
-                />
-            </div>
-        );
-    }
-
-    if (type === 'TYPE_BOOL') {
-
-        if (isArray) {
-            return (
-                <div className="mt-4 rounded-md border border-gray-300" style={getStyleforField('defaultElements')}>
-                    <div className="flex items-center space-x-2">
-                        <Label className="cursor-pointer">
-                            {showAddItem ? <Minus /> : <Plus />}
-                        </Label>
-                        <Checkbox
-                            onCheckedChange={(value: any) => setShowAddItem(value)}
-                        />
-                        <Label
-                            className="cursor-pointer"
-                            title={description}
-                        >
-                            {name}
-                        </Label>
-                    </div>
-                    {showAddItem && (
-                        <>
-                            {arrayItems.map((_: any, index: number) => (
-                                <div key={index} className="flex items-end space-x-2 mb-2">
-                                    <Checkbox
-                                        id={name}
-                                        onCheckedChange={(value) => onChange(`${name}[${index}]`, value)}
-                                        checked={getFormFieldValue(`${name}[${index}]`)}
-                                    />
-                                    <Button style={{ margin: '20px' }} onClick={(e) => handleRemoveItem(e, index)}>X</Button>
-                                </div>
-                            ))}
-                            <Button onClick={handleAddItem}>Add Item</Button>
-                        </>
-                    )}
+            <div className="flex space-x-4 mt-2 items-center">
+                <div className="flex-col space-x-2">
+                    <Checkbox id={name} onCheckedChange={(value) => handleDeleteFromMessage(value)} checked={isEnabled} />
                 </div>
-            );
-        }
-
-
-
-        return (
-            <div className="mt-4 min-w-48 max-w-96 rounded-md border border-gray-300 flex items-center space-x-2 " style={getStyleforField('defaultElements')}>
-                <Checkbox
-                    id={name}
-                    onCheckedChange={(value) => onChange(name, value)}
-                    checked={getFormFieldValue(name)}
-                />
-                <label
-                    htmlFor={name}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    title={description}
-                >
-                    {name}
-                </label>
+                <div className={getClassNameForField(field)} style={getStyleforField('defaultElements')}>
+                    <Label htmlFor={name} title={description}>{name}</Label>
+                    <Input
+                        type="text"
+                        id={name}
+                        placeholder={name}
+                        onChange={(e) => onChange(name, e.target.value)}
+                        value={getFormFieldValue(name)}
+                        disabled={!isEnabled}
+                    />
+                </div>
             </div>
         );
     }
@@ -218,51 +176,102 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isR
 
         if (isArray) {
             return (
-                <div className="mt-4 rounded-md border border-gray-300" style={getStyleforField('defaultElements')}>
-                    <div className="flex items-center space-x-2">
-                        <Label className="cursor-pointer">
-                            {showAddItem ? <Minus /> : <Plus />}
-                        </Label>
-                        <Checkbox
-                            onCheckedChange={(value: any) => setShowAddItem(value)}
-                        />
-                        <Label
-                            className="cursor-pointer"
-                            title={description}
-                        >
-                            {name}
-                        </Label>
-                    </div>
-                    {showAddItem && (
-                        <>
-                            {arrayItems.map((_: any, index: number) => (
+                <div className={getClassNameForField(field)} style={getStyleforField('defaultElements')}>
+                    <FieldHeader isExpanded={isExpanded} setIsExpanded={setIsExpanded} field={field} />
+                    {isExpanded && (
+                        <div className="flex space-x-4 mt-2 items-center">
+                            <div className=" flex-col space-x-2">
+                                <Checkbox id={name} onCheckedChange={(value) => handleDeleteFromMessage(value)} checked={isEnabled} />
+                            </div>
+                            {arrayItems && arrayItems.map((_: any, index: number) => (
                                 <div key={index} className="flex items-end space-x-2 mb-2">
                                     <Input
                                         type="text"
                                         placeholder={name}
                                         onChange={(e) => onChange(`${name}[${index}]`, parseInt(e.target.value, 10))}
                                         value={getFormFieldValue(`${name}[${index}]`)}
+                                        disabled={!isEnabled}
                                     />
-                                    <Button style={{ margin: '20px' }} onClick={(e) => handleRemoveItem(e, index)}>X</Button>
+                                    <ButtonRemove onClick={(e: any) => handleRemoveItem(e, index)} isEnabled={isEnabled} />
+
                                 </div>
                             ))}
-                            <Button onClick={handleAddItem}>Add Item</Button>
-                        </>
+                            <ButtonAdd onClick={handleAddItem} isEnabled={isEnabled} />
+                        </div>
                     )}
                 </div>
             );
         }
 
+        return (
+            <div className="flex space-x-4 mt-2 items-center">
+                <div className="flex-col">
+                    <Checkbox id={name} onCheckedChange={(value) => handleDeleteFromMessage(value)} checked={isEnabled} />
+                </div>
+                <div className={getClassNameForField(field)} style={getStyleforField('defaultElements')}>
+                    <Label htmlFor={name} title={description}>{name}</Label>
+                    <Input
+                        type="text"
+                        id={name}
+                        placeholder={name}
+                        onChange={(e) => onChange(name, parseInt(e.target.value, 10))}
+                        value={getFormFieldValue(name)}
+                        disabled={!isEnabled}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'TYPE_BOOL') {
+
+        if (isArray) {
+            return (
+                <div className={getClassNameForField(field)} style={getStyleforField('defaultElements')}>
+                    <FieldHeader isExpanded={isExpanded} setIsExpanded={setIsExpanded} field={field} />
+                    {isExpanded && (
+                        <div className="flex space-x-4 mt-2 items-center">
+                            <div className=" flex-col space-x-2">
+                                <Checkbox id={name} onCheckedChange={(value) => handleDeleteFromMessage(value)} checked={isEnabled} />
+                            </div>
+                            {arrayItems && arrayItems.map((_: any, index: number) => (
+                                <div key={index} className="flex min-w-48 max-w-96 items-end space-x-2 mb-2">
+                                    <Checkbox
+                                        id={name}
+                                        onCheckedChange={(value) => onChange(`${name}[${index}]`, value)}
+                                        checked={getFormFieldValue(`${name}[${index}]`)}
+                                        disabled={!isEnabled}
+                                    />
+                                    <ButtonRemove onClick={(e: any) => handleRemoveItem(e, index)} isEnabled={isEnabled} />
+                                </div>
+                            ))}
+                            <ButtonAdd onClick={handleAddItem} isEnabled={isEnabled} />
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
         return (
-            <div className="mt-4 min-w-48 max-w-96 rounded-md border border-gray-300" style={getStyleforField('defaultElements')}>
-                <Label htmlFor={name} title={description}>{name}</Label>
-                <Input
-                    id={name}
-                    type="text"
-                    onChange={(e) => onChange(name, parseInt(e.target.value, 10))}
-                    value={getFormFieldValue(name)}
-                />
+            <div className="flex space-x-4 mt-2 items-center">
+                <div className="flex-col space-x-2">
+                    <Checkbox onCheckedChange={(value) => handleDeleteFromMessage(value)} checked={isEnabled} />
+                </div>
+                <div className={getClassNameForField(field) + " flex items-center space-x-2"} style={getStyleforField('defaultElements')}>
+                    <Checkbox
+                        id={name}
+                        onCheckedChange={(value) => onChange(name, value)}
+                        checked={getFormFieldValue(name)}
+                        disabled={!isEnabled}
+                    />
+                    <label
+                        htmlFor={name}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        title={description}
+                    >
+                        {name}
+                    </label>
+                </div>
             </div>
         );
     }
@@ -272,69 +281,63 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isR
         if (isArray) {
             return (
                 <div className="mt-4 min-w-48 max-w-96 rounded-md border border-gray-300" style={getStyleforField('defaultElements')}>
-                    <div className="flex items-center space-x-2">
-                        <Label className="cursor-pointer">
-                            {showAddItem ? <Minus /> : <Plus />}
-                        </Label>
-                        <Checkbox
-                            onCheckedChange={(value: any) => setShowAddItem(value)}
-                        />
-                        <Label
-                            className="cursor-pointer"
-                            title={description}
-                        >
-                            {name}
-                            <div>
-                                <small>{typeName}</small>
+                    <FieldHeader isExpanded={isExpanded} setIsExpanded={setIsExpanded} field={field} />
+                    {isExpanded && (
+                        <div className="flex space-x-4 mt-2 items-center">
+                            <div className="space-x-2">
+                                <Checkbox id={name} onCheckedChange={(value) => handleDeleteFromMessage(value)} checked={isEnabled} />
                             </div>
-                        </Label>
-                    </div>
-                    {showAddItem && (
-                        <>
-                            {arrayItems.map((_: any, index: number) => (
-                                <div key={index} className="flex items-end space-x-2 mb-2">
-                                    <Select
-                                        value={getFormFieldValue(name)}
-                                        onValueChange={(value) => onChange(`${name}[${index}]`, value)}
-                                        defaultValue={getFormFieldValue(`${name}[${index}]`)}
-                                    >
-                                        <SelectTrigger id={name}>
-                                            <SelectValue placeholder={`Select ${name}`} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {enumValues.map((option: any, index: any) => (
-                                                <SelectItem key={index} value={option.name}>{option.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Button style={{ margin: '20px' }} onClick={(e) => handleRemoveItem(e, index)}>X</Button>
-                                </div>
-                            ))}
-                            <Button onClick={handleAddItem}>Add Item</Button>
-                        </>
+                            <div className={getClassNameForField(field)} style={getStyleforField('defaultElements')}>
+                                {arrayItems && arrayItems.map((_: any, index: number) => (
+                                    <div key={index} className="flex items-end space-x-2 mt-4 mb-2">
+                                        <Select
+                                            value={getFormFieldValue(`${name}[${index}]`)}
+                                            onValueChange={(value) => onChange(`${name}[${index}]`, value)}
+                                        >
+                                            <SelectTrigger id={name}>
+                                                <SelectValue placeholder={`Select ${name}`} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {enumValues.map((option: any, index: any) => (
+                                                    <SelectItem key={index} value={option.name}>{option.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <ButtonRemove onClick={(e: any) => handleRemoveItem(e, index)} isEnabled={isEnabled} />
+
+                                    </div>
+                                ))}
+                                <ButtonAdd onClick={handleAddItem} isEnabled={isEnabled} />
+                            </div>
+                        </div>
+
                     )}
                 </div>
             );
         }
 
-
-
         return (
-            <div className="mt-4 min-w-48 max-w-96 rounded-md border border-gray-300" style={getStyleforField('defaultElements')}>
-                <Label htmlFor={name} title={description}>{name}</Label>
-                <Select
-                    value={getFormFieldValue(name)}
-                    onValueChange={handleSelectChange}
-                >
-                    <SelectTrigger id={name}>
-                        <SelectValue placeholder={`Select ${name}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {enumValues.map((option: any, index: any) => (
-                            <SelectItem key={index} value={option.name}>{option.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            <div className="flex space-x-4 mt-2 items-center">
+                <div className="flex-col">
+                    <Checkbox onCheckedChange={(value) => handleDeleteFromMessage(value)} checked={isEnabled} />
+                </div>
+                <div className="flex-col mt-4 min-w-48 max-w-96 rounded-md border border-gray-300 bg-white" style={getStyleforField('defaultElements')}>
+                    <Label htmlFor={name} title={description}>{name}</Label>
+                    <Select
+                        value={getFormFieldValue(name)}
+                        onValueChange={handleSelectChange}
+                        disabled={!isEnabled}
+                    >
+                        <SelectTrigger id={name}>
+                            <SelectValue placeholder={`Select ${name}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {enumValues.map((option: any, index: any) => (
+                                <SelectItem key={index} value={option.name}>{option.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
         );
     }
@@ -343,73 +346,48 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isR
 
         if (isArray) {
             return (
-                <div className="mt-4 rounded-md border border-gray-300" style={getStyleforField('messageElement')}>
-                    <div className="flex items-center space-x-2">
-                        <Label className="cursor-pointer" onClick={() => setIsExpanded(!isExpanded)} >
-                            {isExpanded ? <Minus /> : <Plus />}
-                        </Label>
-                        <Label
-                            className="cursor-pointer"
-                            title={description}
-                        >
-                            {name}
-                            <div className="text-xs muted text-gray-500">{typeName}</div>
-                        </Label>
-                    </div>
+                <div className={getClassNameForField(field)} style={getStyleforField('messageElement')}>
+                    <FieldHeader isExpanded={isExpanded} setIsExpanded={setIsExpanded} field={field} />
                     {isExpanded && (
-                        <>
-                            {arrayItems.map((_: any, index: number) => (
-                                <div key={index} className="flex items-end space-x-2 mb-2">
-                                    {nestedMessage?.fields?.map((nestedField: any) => (
-                                        <DynamicField
-                                            key={nestedField.name}
-                                            isRootElement={false}
-                                            field={{ ...nestedField }}
-                                            onChange={(fieldName: string, value: any) =>
-                                                onChange(`${name}[${index}].${fieldName}`, value)
-                                            }
-                                            formData={formData[name] && formData[name][index] ? formData[name][index] : {}}
-                                        />
-                                    ))}
-                                    <Button
-                                        size={"sm"}
-                                        variant="outline"
-                                        style={{ margin: '20px' }}
-                                        onClick={(e) => handleRemoveItem(e, index)}
-                                    >X</Button>
-                                </div>
-                            ))}
-                            <Button
-                                size={"sm"}
-                                variant="secondary"
-                                onClick={handleAddItem}
-                            > + Add Item</Button>
-                        </>
+                        <div className="flex space-x-4 mt-2 items-center">
+                            <div className="space-x-2">
+                                <Checkbox id={name} onCheckedChange={(value) => handleDeleteFromMessage(value)} checked={isEnabled} />
+                            </div>
+                            <div className={getClassNameForField(field)} style={getStyleforField('defaultElements')}>
+
+                                {arrayItems && arrayItems.map((_: any, index: number) => (
+                                    <div key={index} className="flex items-end space-x-2 mb-2">
+                                        {nestedMessage?.fields?.map((nestedField: any) => (
+                                            <DynamicField
+                                                key={nestedField.name}
+                                                isRootElement={false}
+                                                field={{ ...nestedField }}
+                                                onChange={(fieldName: string, value: any) =>
+                                                    onChange(`${name}[${index}].${fieldName}`, value)
+                                                }
+                                                onRemove={(fieldName: string) => onRemove(`${name}[${index}].${fieldName}`) // Remove the key from the formData
+
+                                                }
+                                                formData={formData[name] && formData[name][index] ? formData[name][index] : {}}
+
+                                            />
+                                        ))}
+                                        <ButtonRemove onClick={(e: any) => handleRemoveItem(e, index)} isEnabled={isEnabled} />
+                                    </div>
+                                ))}
+                                <ButtonAdd onClick={handleAddItem} isEnabled={isEnabled} />
+                            </div>
+                        </div>
                     )}
                 </div>
             );
         }
 
         return (
-            <div className="mt-4 rounded-md border border-gray-300" style={getStyleforField('messageElement')}>
-                <div className="flex items-center space-x-2">
-                    <Label
-                        className="cursor-pointer"
-                        onClick={() => setIsExpanded(!isExpanded)}
-                    >
-                        {isExpanded ? <Minus /> : <Plus />}
-                    </Label>
-
-                    <Label className="cursor-pointer" title={description}
-                    >
-                        {name}
-                        <div className="text-xs muted text-gray-500">{typeName}</div>
-                    </Label>
-
-                </div>
-
+            <div className={getClassNameForField(field)} style={getStyleforField('messageElement')}>
+                <FieldHeader isExpanded={isExpanded} setIsExpanded={setIsExpanded} field={field} />
                 {isExpanded && nestedMessage?.fields?.map((nestedField: any, index: number) => (
-                    <>
+                    <div className="flex space-x-4 mt-2 items-center">
                         <DynamicField
                             key={index}
                             field={nestedField}
@@ -417,9 +395,10 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isR
                             onChange={(fieldName: string, value: any) =>
                                 onChange(`${name}.${fieldName}`, value)
                             }
+                            onRemove={(fieldName: string) => onRemove(`${name}.${fieldName}`)}
                             formData={formData[name] ? formData[name] : {}}
                         />
-                    </>
+                    </div>
                 ))}
             </div>
         );
@@ -432,3 +411,46 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, isR
 
 
 
+const FieldHeader = ({ isExpanded, setIsExpanded, field }: DynamicFieldHeader) => {
+    const { name, description, typeName } = field;
+    return (
+        <div className="flex items-center space-x-2" onClick={() => setIsExpanded(!isExpanded)}>
+            <Label className="cursor-pointer" title="Expand or Collapse"  >
+                {isExpanded ? <Minus /> : <Plus />}
+            </Label>
+            {name && <Label
+                className="cursor-pointer"
+                title={description}
+            >
+                {name}
+                {typeName && <div className="text-xs muted text-gray-500">{typeName}</div>}
+            </Label>}
+        </div>
+    )
+}
+
+const ButtonRemove = ({ onClick, isEnabled }: { onClick: any, isEnabled: boolean }) => {
+    return (
+        <Button
+            size={"sm"}
+            variant="outline"
+            onClick={onClick}
+            className="mb-1"
+            title="Remove Item"
+            disabled={!isEnabled}
+        >X</Button>
+    )
+}
+
+const ButtonAdd = ({ onClick, isEnabled }: { onClick: any, isEnabled: boolean }) => {
+    return (
+        <Button
+            size={"sm"}
+            variant="outline"
+            onClick={onClick}
+            title="Add Item"
+            className="mt-4"
+            disabled={!isEnabled}
+        > + Add Item</Button>
+    )
+}

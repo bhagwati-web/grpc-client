@@ -118,3 +118,17 @@ export function getMethodInputType(host: string, method: string) : string {
 }
 
 
+
+export const getClassNameForField = (elem: any): string => {
+
+    const baseClass = 'mt-4';
+    const baseClassBorder = 'border rounded-md border-gray-300';
+    const baseClassBackground = 'bg-white';
+    const baseClassWidth = 'min-w-96';
+
+    if ((elem.type === 'TYPE_MESSAGE') || elem.isArray) {
+        return `${baseClass} ${baseClassBorder}`;
+    }
+    
+    return `${baseClass} ${baseClassBorder} ${baseClassBackground} ${baseClassWidth}`;
+}
