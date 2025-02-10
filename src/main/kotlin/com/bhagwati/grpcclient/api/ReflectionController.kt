@@ -132,7 +132,7 @@ class ReflectionController {
             }
         }).onNext(request)
 
-        latch.await(2, TimeUnit.SECONDS)
+        latch.await(3, TimeUnit.SECONDS)
         return services
     }
 
@@ -165,7 +165,7 @@ class ReflectionController {
             }
         }).onNext(request)
 
-        latch.await(1, TimeUnit.SECONDS)
+        latch.await(2, TimeUnit.SECONDS)
         return descriptors
     }
 
