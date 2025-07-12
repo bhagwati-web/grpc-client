@@ -14,7 +14,7 @@
     <!-- Define the common version property -->
 	<properties>
 		<grpc.version>1.53.0</grpc.version>
-		<app.version>1.2.1</app.version>
+		<app.version>1.2.2</app.version>
 	</properties>
 
 	<version>${app.version}</version>

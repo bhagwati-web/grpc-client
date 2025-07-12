@@ -9,7 +9,8 @@ import io.grpc.reflection.v1alpha.ServerReflectionResponse
 import io.grpc.stub.StreamObserver
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
@@ -19,6 +20,15 @@ import java.util.concurrent.TimeoutException
 class ReflectionController {
 
     private val logger = LoggerFactory.getLogger(ReflectionController::class.java)
+    private val reflectionCache = ConcurrentHashMap<String, CachedReflectionData>()
+    private val executor = ForkJoinPool.commonPool()
+
+    data class CachedReflectionData(
+        val data: Any,
+        val timestamp: Long = System.currentTimeMillis()
+    ) {
+        fun isExpired(): Boolean = System.currentTimeMillis() - timestamp > 300_000L // 5 minutes
+    }
 
     // Default endpoint function
     @GetMapping
@@ -28,42 +38,35 @@ class ReflectionController {
 
     @GetMapping("/{host}")
     fun fetchReflectionDetails(@PathVariable host: String): Any {
+        // Check cache first
+        val cacheKey = "reflection_$host"
+        val cached = reflectionCache[cacheKey]
+        if (cached != null && !cached.isExpired()) {
+            logger.info("Returning cached reflection data for: $host")
+            return cached.data
+        }
+
         val channel = createChannel(host)
         val reflectionStub = ServerReflectionGrpc.newStub(channel)
 
         return try {
             logger.info("Requesting reflection data for: $host")
 
-            // Step 1: List all services
-            val services = listServices(reflectionStub)
+            // Step 1: List all services with optimized timeout
+            val services = listServicesOptimized(reflectionStub)
             if (services.isEmpty()) {
-                return mapOf("error" to "Error Getting Service and methods for host:  $host. You can correct the host address, port or check if the service is running.")
+                return mapOf("error" to "Error Getting Service and methods for host: $host. You can correct the host address, port or check if the service is running.")
             }
 
-            // Step 2: Request file descriptors for each service
-            val servicesWithMethods: MutableList<Any> = mutableListOf()
-            services.forEach { service ->
-                val fileDescriptors = getFileDescriptorsForService(reflectionStub, service)
-                fileDescriptors.forEach { descriptor ->
-                    val descriptorProto = DescriptorProtos.FileDescriptorProto.parseFrom(descriptor)
-                    descriptorProto.serviceList.forEach { serviceProto ->
-                        servicesWithMethods.add(mapOf(
-                            "serviceName" to serviceProto.name,
-                            "serviceDetails" to service,
-                            "functions" to serviceProto.methodList.map {
-                                mapOf(
-                                    "functionName" to it.name,
-                                    "detailName" to service + "." + it.name,
-                                    "inputType" to it.inputType,
-                                    "outputType" to it.outputType
-                                )
-                            }
-                        ))
-                    }
-                }
-            }
+            // Step 2: Get all file descriptors using batch processing
+            val allFileDescriptors = getAllFileDescriptorsBatch(reflectionStub, services)
 
-            // Return the services with their methods
+            // Step 3: Process descriptors in parallel using executor
+            val servicesWithMethods = processDescriptorsInParallel(allFileDescriptors, services)
+
+            // Cache the result
+            reflectionCache[cacheKey] = CachedReflectionData(servicesWithMethods)
+
             servicesWithMethods
 
         } catch (e: Exception) {
@@ -106,47 +109,221 @@ class ReflectionController {
         }
     }
 
-    // Helper function to list all services
-    private fun listServices(reflectionStub: ServerReflectionGrpc.ServerReflectionStub): List<String> {
+    // Optimized service listing with better timeout and error handling
+    private fun listServicesOptimized(reflectionStub: ServerReflectionGrpc.ServerReflectionStub): List<String> {
         val request = ServerReflectionRequest.newBuilder()
             .setListServices("")
             .build()
 
         val services = mutableListOf<String>()
-        val latch = CountDownLatch(1)
+        val completableFuture = CompletableFuture<List<String>>()
 
-        reflectionStub.serverReflectionInfo(object : StreamObserver<ServerReflectionResponse> {
+        try {
+            val requestObserver = reflectionStub.serverReflectionInfo(object : StreamObserver<ServerReflectionResponse> {
+                override fun onNext(response: ServerReflectionResponse) {
+                    try {
+                        if (response.hasListServicesResponse()) {
+                            services.addAll(response.listServicesResponse.serviceList.map { it.name })
+                            logger.info("Found ${response.listServicesResponse.serviceList.size} services")
+                        } else if (response.hasErrorResponse()) {
+                            logger.error("Server returned error: ${response.errorResponse.errorMessage}")
+                            completableFuture.completeExceptionally(
+                                RuntimeException("Server error: ${response.errorResponse.errorMessage}")
+                            )
+                        }
+                    } catch (e: Exception) {
+                        logger.error("Error processing response: ${e.message}", e)
+                        completableFuture.completeExceptionally(e)
+                    }
+                }
+
+                override fun onError(t: Throwable) {
+                    logger.error("Error during listing services: ${t.message}", t)
+                    when {
+                        t.message?.contains("UNIMPLEMENTED") == true -> {
+                            completableFuture.completeExceptionally(
+                                RuntimeException("Server doesn't support gRPC reflection")
+                            )
+                        }
+                        t.message?.contains("UNAVAILABLE") == true -> {
+                            completableFuture.completeExceptionally(
+                                RuntimeException("Server is unavailable or unreachable")
+                            )
+                        }
+                        t.message?.contains("DEADLINE_EXCEEDED") == true -> {
+                            completableFuture.completeExceptionally(
+                                RuntimeException("Connection timeout - server may be slow or unreachable")
+                            )
+                        }
+                        else -> {
+                            completableFuture.completeExceptionally(t)
+                        }
+                    }
+                }
+
+                override fun onCompleted() {
+                    logger.info("Service listing completed successfully with ${services.size} services")
+                    completableFuture.complete(services)
+                }
+            })
+
+            requestObserver.onNext(request)
+            requestObserver.onCompleted()
+
+        } catch (e: Exception) {
+            logger.error("Failed to initiate reflection request: ${e.message}", e)
+            completableFuture.completeExceptionally(e)
+        }
+
+        return try {
+            // Increase timeout to 10 seconds for better reliability
+            completableFuture.get(10, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            logger.warn("Service listing timed out after 10 seconds - server may not support reflection or is unreachable")
+            emptyList()
+        } catch (e: ExecutionException) {
+            logger.error("Service listing failed: ${e.cause?.message}", e.cause)
+            emptyList()
+        } catch (e: Exception) {
+            logger.error("Unexpected error during service listing: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    // Batch request for all file descriptors with improved error handling
+    private fun getAllFileDescriptorsBatch(
+        reflectionStub: ServerReflectionGrpc.ServerReflectionStub,
+        services: List<String>
+    ): Map<String, List<ByteArray>> {
+        val descriptorMap = ConcurrentHashMap<String, List<ByteArray>>()
+        val completableFuture = CompletableFuture<Map<String, List<ByteArray>>>()
+        val pendingRequests = AtomicInteger(services.size)
+
+        if (services.isEmpty()) {
+            return emptyMap()
+        }
+
+        val requestObserver = reflectionStub.serverReflectionInfo(object : StreamObserver<ServerReflectionResponse> {
             override fun onNext(response: ServerReflectionResponse) {
-                if (response.hasListServicesResponse()) {
-                    services.addAll(response.listServicesResponse.serviceList.map { it.name })
+                if (response.hasFileDescriptorResponse()) {
+                    // Since we can't get original request easily, we'll match by position or use a different approach
+                    val descriptors = response.fileDescriptorResponse.fileDescriptorProtoList.map { it.toByteArray() }
+                    // For now, we'll store all descriptors and let the processing handle service matching
+                    descriptorMap["batch_${descriptorMap.size}"] = descriptors
+                }
+
+                if (pendingRequests.decrementAndGet() <= 0) {
+                    completableFuture.complete(descriptorMap)
                 }
             }
 
             override fun onError(t: Throwable) {
-                logger.error("Error during listing services: ${t.message}", t)
-                latch.countDown()
+                logger.error("Error during batch file descriptor request: ${t.message}", t)
+                completableFuture.completeExceptionally(t)
             }
 
             override fun onCompleted() {
-                latch.countDown()
+                completableFuture.complete(descriptorMap)
             }
-        }).onNext(request)
+        })
 
-        latch.await(3, TimeUnit.SECONDS)
-        return services
+        // Send all requests in sequence with small delays to avoid overwhelming the server
+        services.forEach { service ->
+            val request = ServerReflectionRequest.newBuilder()
+                .setFileContainingSymbol(service)
+                .build()
+            requestObserver.onNext(request)
+        }
+        requestObserver.onCompleted()
+
+        return try {
+            completableFuture.get(15, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            logger.warn("Batch file descriptor request timed out")
+            descriptorMap
+        } catch (e: Exception) {
+            logger.error("Error in batch request: ${e.message}", e)
+            descriptorMap
+        }
     }
 
-    // Helper function to get file descriptors for a specific service
-    private fun getFileDescriptorsForService(
+    // Process descriptors in parallel using CompletableFuture
+    private fun processDescriptorsInParallel(
+        descriptorMap: Map<String, List<ByteArray>>,
+        services: List<String>
+    ): List<Any> {
+        val servicesWithMethods = ConcurrentLinkedQueue<Map<String, Any>>()
+
+        // Create futures for each service processing task
+        val futures = services.map { service ->
+            CompletableFuture.supplyAsync({
+                processServiceWithAllDescriptors(service, descriptorMap.values.flatten())
+            }, executor)
+        }
+
+        // Wait for all futures to complete and collect results
+        val allResults = futures.map { future ->
+            try {
+                future.get(10, TimeUnit.SECONDS)
+            } catch (e: Exception) {
+                logger.error("Error processing service descriptors: ${e.message}", e)
+                emptyList<Map<String, Any>>()
+            }
+        }
+
+        return allResults.flatten()
+    }
+
+    private fun processServiceWithAllDescriptors(service: String, allDescriptors: List<ByteArray>): List<Map<String, Any>> {
+        val results = mutableListOf<Map<String, Any>>()
+
+        allDescriptors.forEach { descriptor ->
+            try {
+                val descriptorProto = DescriptorProtos.FileDescriptorProto.parseFrom(descriptor)
+                descriptorProto.serviceList.forEach { serviceProto ->
+                    // Only process if this descriptor contains the service we're looking for
+                    if (serviceProto.name == service || service.endsWith(".${serviceProto.name}")) {
+                        results.add(mapOf(
+                            "serviceName" to serviceProto.name,
+                            "serviceDetails" to service,
+                            "functions" to serviceProto.methodList.map {
+                                mapOf(
+                                    "functionName" to it.name,
+                                    "detailName" to "$service.${it.name}",
+                                    "inputType" to it.inputType,
+                                    "outputType" to it.outputType
+                                )
+                            }
+                        ))
+                    }
+                }
+            } catch (e: Exception) {
+                logger.debug("Skipping descriptor that doesn't match service $service: ${e.message}")
+            }
+        }
+
+        return results
+    }
+
+    // Optimized single service file descriptor retrieval with caching
+    private fun getFileDescriptorsForServiceOptimized(
         reflectionStub: ServerReflectionGrpc.ServerReflectionStub,
         serviceName: String
     ): List<ByteArray> {
+        // Check cache first
+        val cacheKey = "descriptors_$serviceName"
+        val cached = reflectionCache[cacheKey]
+        if (cached != null && !cached.isExpired()) {
+            @Suppress("UNCHECKED_CAST")
+            return cached.data as List<ByteArray>
+        }
+
         val request = ServerReflectionRequest.newBuilder()
             .setFileContainingSymbol(serviceName)
             .build()
 
         val descriptors = mutableListOf<ByteArray>()
-        val latch = CountDownLatch(1)
+        val completableFuture = CompletableFuture<List<ByteArray>>()
 
         reflectionStub.serverReflectionInfo(object : StreamObserver<ServerReflectionResponse> {
             override fun onNext(response: ServerReflectionResponse) {
@@ -157,16 +334,26 @@ class ReflectionController {
 
             override fun onError(t: Throwable) {
                 logger.error("Error during fetching file descriptors: ${t.message}", t)
-                latch.countDown()
+                completableFuture.completeExceptionally(t)
             }
 
             override fun onCompleted() {
-                latch.countDown()
+                completableFuture.complete(descriptors)
             }
         }).onNext(request)
 
-        latch.await(2, TimeUnit.SECONDS)
-        return descriptors
+        return try {
+            val result = completableFuture.get(10, TimeUnit.SECONDS)
+            // Cache the result
+            reflectionCache[cacheKey] = CachedReflectionData(result)
+            result
+        } catch (e: TimeoutException) {
+            logger.warn("File descriptor request timed out for service: $serviceName")
+            emptyList()
+        } catch (e: Exception) {
+            logger.error("Error getting file descriptors: ${e.message}", e)
+            emptyList()
+        }
     }
 
     private fun createChannel(host: String): ManagedChannel {
