@@ -50,7 +50,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const onItemClick = (item: any) => {
     const { message, host, service, requestName, metaData } = item
-    console.log(item)
     setServerInfo({
       host,
       method: `${service}.${requestName}`,

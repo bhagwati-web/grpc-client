@@ -122,7 +122,6 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
                 setLoading(false);
                 return;
             }
-            console.log("ServiceResponse", data.fields);
             setServiceResponse({
                 fields: data.fields,
                 message: data.message

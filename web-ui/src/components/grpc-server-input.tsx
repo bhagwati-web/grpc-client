@@ -34,19 +34,27 @@ export function GrpcServerInput() {
     } = React.useContext(GrpcContext) as GrpcContextProps;
 
     const [reflections, setReflections] = React.useState([]);
+    const [methodName, setMethodName] = React.useState('');
     const { host, method } = serverInfo;
 
     React.useEffect(() => {
         fetchGrpcReflections({ preventDefault: () => { } }, false)
-    }, [serverInfo.method]);
-
-    const handleHostChange = React.useCallback((e: any) => {
-        setServerInfo((prev: any) => ({ ...prev, host: e.target.value }))
+        setServerInfo((prev: any) => ({ ...prev, method, host }))
     }, [host]);
 
-    const handleMethodChange = React.useCallback((value: string) => {
-        setServerInfo((prev: any) => ({ ...prev, method: value }))
-    }, [method]);
+    React.useEffect(() => {
+        setServerInfo((prev: any) => ({ ...prev, method: methodName }))
+    }, [methodName]);
+
+    const handleHostChange = (e: any) => {
+        setServerInfo((prev: any) => ({ ...prev, host: e.target.value }))
+    };
+
+    const handleMethodChange = (value: string) => {
+        if (value || value !== '') {
+            setMethodName(value);
+        }
+    };
 
     const fetchGrpcReflections = async (e: any, forceFetch: boolean) => {
         e.preventDefault()
@@ -68,7 +76,7 @@ export function GrpcServerInput() {
         const data = await response.json()
 
         if (data.error) {
-            toast({ title: "Error!", description: data?.error, variant: "destructive"  })
+            toast({ title: "Error!", description: data?.error, variant: "destructive" })
             setLoading(false);
             return;
         }

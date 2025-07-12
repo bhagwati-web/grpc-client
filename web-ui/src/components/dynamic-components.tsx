@@ -20,6 +20,7 @@ interface DynamicFieldProps {
     onRemove: any;
     isRootElement: any;
     formData: any;
+    key: any;
 }
 
 interface DynamicFieldHeader {
@@ -30,7 +31,7 @@ interface DynamicFieldHeader {
 
 
 // Helper component to render the form fields dynamically
-export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, onRemove, isRootElement, formData }) => {
+export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, onRemove, isRootElement, formData, key }) => {
     const { name, type, enumValues, nestedMessage, isArray, description } = field;
     const [isExpanded, setIsExpanded] = useState(formData && formData[name] ? true : false);
     const [isEnabled, setIsEnabled] = useState(formData && formData[name] ? true : false);
@@ -38,9 +39,6 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, onR
     // const [showAddItem, setShowAddItem] = useState(false); // To control Add Item button visibility
     //const [selectedValue, setSelectedValue] = useState(enumValues ? enumValues[0].number : "");
     const colorRef = React.useRef('');
-
-    if (name == 'repeated_enum_annotation')
-        console.log('field Info', field, formData, name);
 
     useEffect(() => {
         if (colorRef.current === '')
@@ -107,17 +105,19 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, onR
     const getFormFieldValue = (fieldName: string) => {
         let current: any = formData;
         const keys = fieldName.split('.');
-        console.log("object keys", keys);
         keys.forEach((key: any) => {
             if (key.includes('[')) {
                 const [arrayKey, arrayIndex] = key.split(/[\[\]]/).filter(Boolean);
                 current = current[arrayKey] ? current[arrayKey][arrayIndex] : '';
             } else {
-                current = current[fieldName] ? current[fieldName] : '';
+                current = current && current[fieldName] ? current[fieldName] : '';
             }
         });
         return current
     }
+
+    if (name == 'repeated_enum_annotation')
+        console.log('field Info', field, formData, name);
 
     if (type === 'TYPE_STRING' || type === 'TYPE_BYTES') {
 
@@ -368,7 +368,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, onR
                                                 onRemove={(fieldName: string) => onRemove(`${name}[${index}].${fieldName}`) // Remove the key from the formData
 
                                                 }
-                                                formData={formData[name] && formData[name][index] ? formData[name][index] : {}}
+                                                formData={formData && formData[name] && formData[name][index] ? formData[name][index] : {}}
 
                                             />
                                         ))}
@@ -384,10 +384,11 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, onR
         }
 
         return (
-            <div className={getClassNameForField(field)} style={getStyleforField('messageElement')}>
+            <div className={getClassNameForField(field)} style={getStyleforField('messageElement')} key={`${key}-${name}`}>
                 <FieldHeader isExpanded={isExpanded} setIsExpanded={setIsExpanded} field={field} />
                 {isExpanded && nestedMessage?.fields?.map((nestedField: any, index: number) => (
                     <div className="flex space-x-4 mt-2 items-center">
+
                         <DynamicField
                             key={index}
                             field={nestedField}
@@ -396,7 +397,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ field, onChange, onR
                                 onChange(`${name}.${fieldName}`, value)
                             }
                             onRemove={(fieldName: string) => onRemove(`${name}.${fieldName}`)}
-                            formData={formData[name] ? formData[name] : {}}
+                            formData={formData && formData[name] ? formData[name] : {}}
                         />
                     </div>
                 ))}
