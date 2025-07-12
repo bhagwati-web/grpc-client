@@ -37,7 +37,23 @@ class GrpcController {
             println("\nStarted gRPC Execution\n")
             println(command.joinToString(" "))
             val timeout = 10L // Timeout in seconds
-            val process = ProcessBuilder(command).start()
+
+            // Create ProcessBuilder with proper environment setup
+            val processBuilder = ProcessBuilder(command)
+
+            // Get current environment and add homebrew paths
+            val environment = processBuilder.environment()
+            val currentPath = environment["PATH"] ?: ""
+            val homebrewPaths = "/opt/homebrew/bin:/usr/local/bin"
+
+            // Ensure homebrew paths are in the PATH
+            if (!currentPath.contains("/opt/homebrew/bin")) {
+                environment["PATH"] = "$homebrewPaths:$currentPath"
+            }
+
+            println("Using PATH: ${environment["PATH"]}")
+
+            val process = processBuilder.start()
             val bufferSize = 8192 * 10 // Define the buffer size explicitly
 
             val outputReader = Thread {
