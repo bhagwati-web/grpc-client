@@ -59,7 +59,7 @@ func setupRoutes(
 	collectionController *controllers.CollectionController,
 ) {
 	// API routes must be defined BEFORE static routes to take precedence
-	
+
 	// gRPC routes
 	grpcGroup := router.Group("/grpc")
 	{
@@ -82,16 +82,22 @@ func setupRoutes(
 		collectionGroup.POST("/save", collectionController.SaveCollection)
 		collectionGroup.DELETE("/delete", collectionController.DeleteCollection)
 	}
-	
-	// Serve embedded static files
+
+	// Serve embedded static files - create filesystem for assets subdirectory
 	staticFS, err := fs.Sub(staticFiles, "static")
 	if err != nil {
 		log.Fatal("Failed to create static file system:", err)
 	}
-	
-	// Serve all static files from the embedded filesystem
-	router.StaticFS("/assets", http.FS(staticFS))
-	
+
+	// Create sub-filesystem for assets directory
+	assetsFS, err := fs.Sub(staticFS, "assets")
+	if err != nil {
+		log.Fatal("Failed to create assets file system:", err)
+	}
+
+	// Serve assets from the embedded filesystem
+	router.StaticFS("/assets", http.FS(assetsFS))
+
 	// Serve vite.svg from embedded files
 	router.GET("/vite.svg", func(c *gin.Context) {
 		data, err := staticFiles.ReadFile("static/vite.svg")
@@ -101,7 +107,7 @@ func setupRoutes(
 		}
 		c.Data(200, "image/svg+xml", data)
 	})
-	
+
 	// Serve the main React app for the root path from embedded files
 	router.GET("/", func(c *gin.Context) {
 		data, err := staticFiles.ReadFile("static/index.html")
@@ -111,16 +117,16 @@ func setupRoutes(
 		}
 		c.Data(200, "text/html; charset=utf-8", data)
 	})
-	
+
 	// SPA fallback - serve React app for all other non-API routes from embedded files
 	router.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
 		// Don't serve SPA for API routes or asset requests
-		if strings.HasPrefix(path, "/grpc") || 
-		   strings.HasPrefix(path, "/metadata") || 
-		   strings.HasPrefix(path, "/collection") ||
-		   strings.HasPrefix(path, "/assets") ||
-		   path == "/vite.svg" {
+		if strings.HasPrefix(path, "/grpc") ||
+			strings.HasPrefix(path, "/metadata") ||
+			strings.HasPrefix(path, "/collection") ||
+			strings.HasPrefix(path, "/assets") ||
+			path == "/vite.svg" {
 			c.JSON(404, gin.H{"error": "Not found"})
 		} else {
 			// Serve React app for client-side routing from embedded files
