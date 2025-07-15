@@ -119,10 +119,10 @@ export function GrpcServerInput() {
                                             <SelectGroup key={`${service.title}-${service.serviceName}-service-${serviceIndex}`}>
                                                 <SelectLabel>{service.serviceName}</SelectLabel>
                                                 {
-                                                    service.functions.map((method: any, functionIndex: number) => (
-                                                        <SelectItem key={`${service.title}-${service.serviceName}-service-${serviceIndex}-${method.detailName}-${functionIndex}`} value={method.detailName}>
-                                                            <div>{method.functionName}</div>
-                                                            <small className="text-gray-500">{method.detailName}</small>
+                                                    service.methods.map((method: any, functionIndex: number) => (
+                                                        <SelectItem key={`${service.title}-${service.serviceName}-service-${serviceIndex}-${method.fullName}-${functionIndex}`} value={method.fullName}>
+                                                            <div>{method.name}</div>
+                                                            <small className="text-gray-500">{method.fullName}</small>
                                                         </SelectItem>
                                                     ))
                                                 }

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card"
 import { appConfig } from "@/config/config";
 import { Layers2, Wrench, X } from "lucide-react";
-import { getMethodInputType, getServiceNameFromMethod } from "@/utils/app-utils";
+import { getServiceNameFromMethod } from "@/utils/app-utils";
 import { toast } from "@/hooks/use-toast";
 
 export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilder: (value: boolean) => void }) {
@@ -101,7 +101,7 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
         e.preventDefault();
         console.log(JSON.stringify(formData, null, 2));
         setServerInfo({ ...serverInfo, message: formData });
-    
+
         setTimeout(() => {
             setLoading(false);
             //setShowRequestBuilder(false);
@@ -112,21 +112,32 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
     const fetchMetaData = async () => {
         if (serverInfo.host && serverInfo.method) {
             setLoading(true);
-            let functionInput = getMethodInputType(serverInfo.host, serverInfo.method);
             let servicenName = getServiceNameFromMethod(serverInfo.method, 'full');
-            const functionMetaData = await fetch(`${appConfig.serviceBaseUrl}${appConfig.grpcMetaData}/${serverInfo.host}/${servicenName}/${functionInput}`)
-            const data = await functionMetaData.json()
-            if (data && data.error) {
-                console.error(data.error);
-                toast({ title: "Error!", description: data.error, variant: "destructive" })
+            let methodName = serverInfo.method.split('.').pop() || '';
+            console.log(`Fetching metadata for ${methodName}`);
+            console.log(`${appConfig.serviceBaseUrl}${appConfig.grpcMetaData}/${serverInfo.host}/${servicenName}/${methodName}`);
+            try {
+                const functionMetaData = await fetch(`${appConfig.serviceBaseUrl}${appConfig.grpcMetaData}/${serverInfo.host}/${servicenName}/${methodName}`) || null;
+                const data = await functionMetaData.json();
+
+                const { inputDetails } = data;
+
+                if (data && data.error) {
+                    console.error(data.error);
+                    toast({ title: "Error!", description: data.error, variant: "destructive" })
+                    setLoading(false);
+                    return;
+                }
+                setServiceResponse({
+                    fields: inputDetails.fields,
+                    message: inputDetails.message
+                });
                 setLoading(false);
-                return;
+            } catch (error) {
+                console.error("Error fetching metadata:", error);
+                toast({ title: "Error!", description: "Failed to fetch metadata", variant: "destructive" })
+                setLoading(false);
             }
-            setServiceResponse({
-                fields: data.fields,
-                message: data.message
-            });
-            setLoading(false);
         }
     }
 
@@ -167,17 +178,17 @@ export function RequestBuilder({ setShowRequestBuilder }: { setShowRequestBuilde
                         </div>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">                    
-                        {serviceResponse.fields?.map((field: any, index: any) => (
-                            <DynamicField
+                <CardContent className="space-y-2">
+                    {serviceResponse.fields?.map((field: any, index: any) => (
+                        <DynamicField
                             isRootElement={true}
                             key={index}
                             field={field}
                             onChange={handleChange}
                             onRemove={handleRemove}
                             formData={formData}
-                            />
-                        ))}
+                        />
+                    ))}
                 </CardContent>
                 <CardFooter className="flex justify-between">
                     <div className="flex items-center gap-2">
