@@ -1,14 +1,20 @@
 package main
 
 import (
+	"embed"
 	"grpc-client/controllers"
 	"grpc-client/middleware"
+	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
+
+//go:embed static/*
+var staticFiles embed.FS
 
 func main() {
 	// Set Gin mode
@@ -77,17 +83,36 @@ func setupRoutes(
 		collectionGroup.DELETE("/delete", collectionController.DeleteCollection)
 	}
 	
-	// Serve all static files from the static directory
-	// This will serve assets, vite.svg, and any other static files
-	router.StaticFS("/assets", gin.Dir("./static/assets", false))
-	router.StaticFile("/vite.svg", "./static/vite.svg")
+	// Serve embedded static files
+	staticFS, err := fs.Sub(staticFiles, "static")
+	if err != nil {
+		log.Fatal("Failed to create static file system:", err)
+	}
 	
-	// Serve the main React app for the root path
-	router.GET("/", func(c *gin.Context) {
-		c.File("./static/index.html")
+	// Serve all static files from the embedded filesystem
+	router.StaticFS("/assets", http.FS(staticFS))
+	
+	// Serve vite.svg from embedded files
+	router.GET("/vite.svg", func(c *gin.Context) {
+		data, err := staticFiles.ReadFile("static/vite.svg")
+		if err != nil {
+			c.JSON(404, gin.H{"error": "File not found"})
+			return
+		}
+		c.Data(200, "image/svg+xml", data)
 	})
 	
-	// SPA fallback - serve React app for all other non-API routes
+	// Serve the main React app for the root path from embedded files
+	router.GET("/", func(c *gin.Context) {
+		data, err := staticFiles.ReadFile("static/index.html")
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to load index.html"})
+			return
+		}
+		c.Data(200, "text/html; charset=utf-8", data)
+	})
+	
+	// SPA fallback - serve React app for all other non-API routes from embedded files
 	router.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
 		// Don't serve SPA for API routes or asset requests
@@ -98,8 +123,13 @@ func setupRoutes(
 		   path == "/vite.svg" {
 			c.JSON(404, gin.H{"error": "Not found"})
 		} else {
-			// Serve React app for client-side routing
-			c.File("./static/index.html")
+			// Serve React app for client-side routing from embedded files
+			data, err := staticFiles.ReadFile("static/index.html")
+			if err != nil {
+				c.JSON(500, gin.H{"error": "Failed to load index.html"})
+				return
+			}
+			c.Data(200, "text/html; charset=utf-8", data)
 		}
 	})
 }
