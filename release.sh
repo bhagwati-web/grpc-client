@@ -5,7 +5,7 @@
 
 set -e
 
-VERSION=${1:-"2.1.0"}
+VERSION=${1:-"3.2.0"}
 
 echo "🚀 Preparing release v${VERSION}..."
 

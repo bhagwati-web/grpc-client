@@ -66,12 +66,12 @@ func (gc *GrpcController) MakeGrpcCall(c *gin.Context) {
 
 func (gc *GrpcController) createConnection(host string) (*grpc.ClientConn, error) {
 	log.Printf("Creating gRPC connection for host: %s", host)
-	
+
 	parts := strings.Split(host, ":")
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("invalid host format: %s", host)
 	}
-	
+
 	port, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return nil, fmt.Errorf("invalid port: %s", parts[1])
@@ -126,10 +126,10 @@ func (gc *GrpcController) getMethodDescriptor(conn *grpc.ClientConn, methodName 
 	if len(parts) < 2 {
 		return nil, fmt.Errorf("invalid method name format: %s", methodName)
 	}
-	
+
 	serviceName := strings.Join(parts[:len(parts)-1], ".")
 	methodShortName := parts[len(parts)-1]
-	
+
 	log.Printf("Looking for service: '%s', method: '%s'", serviceName, methodShortName)
 
 	// Create reflection client
@@ -141,7 +141,7 @@ func (gc *GrpcController) getMethodDescriptor(conn *grpc.ClientConn, methodName 
 	if err != nil {
 		return nil, fmt.Errorf("failed to list services: %v", err)
 	}
-	
+
 	log.Printf("Available services: %v", services)
 
 	// Find matching service name
@@ -149,7 +149,7 @@ func (gc *GrpcController) getMethodDescriptor(conn *grpc.ClientConn, methodName 
 	if actualServiceName == "" {
 		return nil, fmt.Errorf("service '%s' not found. Available services: %v", serviceName, services)
 	}
-	
+
 	log.Printf("Using actual service name: '%s'", actualServiceName)
 
 	// Get service descriptor
@@ -182,7 +182,7 @@ func (gc *GrpcController) findMatchingServiceName(availableServices []string, re
 	if idx := strings.LastIndex(requestedServiceName, "."); idx != -1 {
 		shortServiceName = requestedServiceName[idx+1:]
 	}
-	
+
 	for _, service := range availableServices {
 		if service == shortServiceName {
 			return service
@@ -230,45 +230,17 @@ func (gc *GrpcController) parseRequestMessage(msgDesc *desc.MessageDescriptor, m
 func (gc *GrpcController) createMetadata(grpcRequest models.GrpcRequest, headers http.Header) metadata.MD {
 	md := metadata.New(nil)
 
-	// Add metadata from request - handle flexible format, prioritizing flat object
+	// Add metadata from request - now using simple flat object format
 	if grpcRequest.MetaData != nil {
-		switch metaData := grpcRequest.MetaData.(type) {
-		case map[string]interface{}:
-			// Handle flat object format (preferred - what UI sends)
-			for key, value := range metaData {
-				if strVal, ok := value.(string); ok {
-					md.Append(key, strVal)
-				}
-			}
-		case map[string]string:
-			// Handle strongly typed flat object
-			for key, value := range metaData {
-				md.Append(key, value)
-			}
-		case []interface{}:
-			// Handle legacy array format
-			for _, item := range metaData {
-				if itemMap, ok := item.(map[string]interface{}); ok {
-					for key, value := range itemMap {
-						if strVal, ok := value.(string); ok {
-							md.Append(key, strVal)
-						}
-					}
-				}
-			}
-		case []map[string]string:
-			// Handle strongly typed array format
-			for _, metaMap := range metaData {
-				for key, value := range metaMap {
-					md.Append(key, value)
-				}
+		for key, value := range grpcRequest.MetaData {
+			if value != "" { // Only add non-empty values
+				md.Append(strings.ToLower(key), value)
 			}
 		}
 	}
 
-	// Add authorization header if present
+	// Add authorization header if present and not already in metadata
 	if authHeader := headers.Get("Authorization"); authHeader != "" {
-		// Check if authorization is not already in metadata
 		if _, exists := md["authorization"]; !exists {
 			md.Append("authorization", authHeader)
 		}
@@ -286,7 +258,7 @@ func (gc *GrpcController) makeUnaryCall(ctx context.Context, conn *grpc.ClientCo
 
 	// Prepare method invocation
 	fullMethodName := fmt.Sprintf("/%s/%s", methodDesc.GetService().GetFullyQualifiedName(), methodDesc.GetName())
-	
+
 	// Create response message
 	responseMsg := dynamic.NewMessage(methodDesc.GetOutputType())
 

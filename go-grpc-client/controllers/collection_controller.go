@@ -26,14 +26,14 @@ func NewCollectionController() *CollectionController {
 		log.Printf("Error getting home directory: %v", err)
 		homeDir = "."
 	}
-	
+
 	baseFolderPath := filepath.Join(homeDir, constants.GrpcCollectionLocation)
-	
+
 	// Ensure that the base folder exists
 	if err := os.MkdirAll(baseFolderPath, 0755); err != nil {
 		log.Printf("Error creating base folder: %v", err)
 	}
-	
+
 	return &CollectionController{
 		baseFolderPath: baseFolderPath,
 	}
@@ -42,18 +42,18 @@ func NewCollectionController() *CollectionController {
 func (cc *CollectionController) LoadCollection(c *gin.Context) {
 	// Load user collections from the filesystem
 	userCollections := cc.getAllCollectionFromFolder()
-	
+
 	// Load sample collections
 	sampleCollections := cc.getAllCollectionFromSampleData()
-	
+
 	// Combine collections
 	allCollections := append(userCollections, sampleCollections...)
-	
+
 	// Sort collections alphabetically by title (name)
 	sort.Slice(allCollections, func(i, j int) bool {
 		return strings.ToLower(allCollections[i].Title) < strings.ToLower(allCollections[j].Title)
 	})
-	
+
 	c.JSON(http.StatusOK, allCollections)
 }
 
@@ -70,7 +70,7 @@ func (cc *CollectionController) SaveCollection(c *gin.Context) {
 	if idx := strings.Index(collectionName, "."); idx != -1 {
 		collectionName = collectionName[:idx]
 	}
-	
+
 	// Extract request name from method
 	requestName := collection.Method
 	if idx := strings.LastIndex(requestName, "."); idx != -1 {
@@ -225,7 +225,7 @@ func (cc *CollectionController) getAllCollectionFromFolder() []models.Collection
 			// Extract service name from path
 			dir := filepath.Dir(path)
 			serviceName := filepath.Base(dir)
-			
+
 			// Extract request name from filename
 			filename := filepath.Base(path)
 			requestName := strings.TrimSuffix(filename, constants.GrpcCollectionFileExtension)
@@ -264,41 +264,8 @@ func (cc *CollectionController) addToCollections(
 		}
 	}
 
-	// Convert metadata to the expected format (flat object)
-	var metaData map[string]string
-	if collectionData.MetaData != nil {
-		metaData = make(map[string]string)
-		switch md := collectionData.MetaData.(type) {
-		case map[string]interface{}:
-			// Handle flat object format (preferred - what UI sends)
-			for k, v := range md {
-				if strVal, ok := v.(string); ok {
-					metaData[k] = strVal
-				}
-			}
-		case map[string]string:
-			// Handle strongly typed flat object
-			metaData = md
-		case []interface{}:
-			// Handle legacy array format - flatten all objects into one
-			for _, item := range md {
-				if itemMap, ok := item.(map[string]interface{}); ok {
-					for k, v := range itemMap {
-						if strVal, ok := v.(string); ok {
-							metaData[k] = strVal
-						}
-					}
-				}
-			}
-		case []map[string]string:
-			// Handle strongly typed array format - flatten all objects into one
-			for _, itemMap := range md {
-				for k, v := range itemMap {
-					metaData[k] = v
-				}
-			}
-		}
-	}
+	// Use metadata directly since it's now map[string]string
+	metaData := collectionData.MetaData
 
 	item := models.CollectionItem{
 		Message:     collectionData.Message,
@@ -314,7 +281,7 @@ func (cc *CollectionController) addToCollections(
 
 func (cc *CollectionController) isSampleCollection(collectionName, requestName string) bool {
 	sampleCollections := cc.getAllCollectionFromSampleData()
-	
+
 	for _, collection := range sampleCollections {
 		if collection.Title == collectionName {
 			for _, item := range collection.Items {
@@ -324,6 +291,6 @@ func (cc *CollectionController) isSampleCollection(collectionName, requestName s
 			}
 		}
 	}
-	
+
 	return false
 }

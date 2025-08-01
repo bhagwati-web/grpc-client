@@ -14,8 +14,8 @@ func TestGrpcRequestJSON(t *testing.T) {
 			"a": 2,
 			"b": 3,
 		},
-		MetaData: []map[string]string{
-			{"authorization": "Bearer token"},
+		MetaData: map[string]string{
+			"authorization": "Bearer token",
 		},
 	}
 

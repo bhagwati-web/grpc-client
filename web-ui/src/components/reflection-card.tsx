@@ -63,8 +63,41 @@ export function ReflectionCardWithForm() {
     const getGrpcRespone = async () => {
         setLoading(true);
         const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.grpcBaseEndpoint + appConfig.grpcCallEndpoint}`
-        const requestMetaData = metaData ? Object.entries(metaData).map(([key, value]) => ({ [key]: value })) : []
-        const payload = { message, host, method, metaData: requestMetaData }
+        
+        // Debug: Log the metaData to see what format it's in
+        console.log('metaData type:', typeof metaData);
+        console.log('metaData value:', metaData);
+        console.log('metaData is array:', Array.isArray(metaData));
+        
+        // Ensure metaData is always an object, not an array
+        let finalMetaData = metaData;
+        if (Array.isArray(metaData)) {
+            // Convert array back to object if needed
+            finalMetaData = {};
+            metaData.forEach(item => {
+                if (typeof item === 'object' && item !== null) {
+                    Object.assign(finalMetaData, item);
+                }
+            });
+        } else if (!metaData || typeof metaData !== 'object') {
+            finalMetaData = {};
+        }
+        
+        // Ensure all metadata values are strings
+        const stringifiedMetaData: Record<string, string> = {};
+        if (finalMetaData && typeof finalMetaData === 'object') {
+            Object.entries(finalMetaData).forEach(([key, value]) => {
+                // Convert all values to strings
+                stringifiedMetaData[key] = typeof value === 'string' ? value : String(value);
+            });
+        }
+        
+        // Send metadata as flat object instead of array
+        const payload = { message, host, method, metaData: stringifiedMetaData }
+        
+        // Debug: Log the full payload
+        console.log('Sending payload:', JSON.stringify(payload, null, 2));
+        
         const response = await fetch(serviceUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -91,11 +124,32 @@ export function ReflectionCardWithForm() {
         setLoading(true);
         const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.collectionBaseUrl + appConfig.collectionSaveUrl}`
 
+        // Ensure metaData is always an object, not an array
+        let finalMetaData = metaData;
+        if (Array.isArray(metaData)) {
+            finalMetaData = {};
+            metaData.forEach(item => {
+                if (typeof item === 'object' && item !== null) {
+                    Object.assign(finalMetaData, item);
+                }
+            });
+        } else if (!metaData || typeof metaData !== 'object') {
+            finalMetaData = {};
+        }
 
-        const payload = { message, host, service: method?.split('.').slice(0, -1).join('.'), method, metaData }
+        // Ensure all metadata values are strings
+        const stringifiedMetaData: Record<string, string> = {};
+        if (finalMetaData && typeof finalMetaData === 'object') {
+            Object.entries(finalMetaData).forEach(([key, value]) => {
+                // Convert all values to strings
+                stringifiedMetaData[key] = typeof value === 'string' ? value : String(value);
+            });
+        }
+
+        const payload = { message, host, service: method?.split('.').slice(0, -1).join('.'), method, metaData: stringifiedMetaData }
         const response = await fetch(serviceUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...metaData },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
         const data = await response.json()
@@ -114,10 +168,27 @@ export function ReflectionCardWithForm() {
     const deleteGrpcRequest = async () => {
         setLoading(true);
         const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.collectionBaseUrl + appConfig.collectionDeleteUrl}`
+        
+        // Ensure metaData is always an object, not an array
+        let finalMetaData = metaData;
+        if (Array.isArray(metaData)) {
+            finalMetaData = {};
+            metaData.forEach(item => {
+                if (typeof item === 'object' && item !== null) {
+                    Object.assign(finalMetaData, item);
+                }
+            });
+        } else if (!metaData || typeof metaData !== 'object') {
+            finalMetaData = {};
+        }
+        
         const payload = { collectionName: host?.split('.')[0], method: method }
         const response = await fetch(serviceUrl, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json', ...metaData },
+            headers: { 
+                'Content-Type': 'application/json',
+                ...(typeof finalMetaData === 'object' && !Array.isArray(finalMetaData) ? finalMetaData : {})
+            },
             body: JSON.stringify(payload)
         })
         const data = await response.json()

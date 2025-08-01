@@ -2,10 +2,10 @@ package models
 
 // GrpcRequest represents the gRPC request structure
 type GrpcRequest struct {
-	Host     string                       `json:"host" binding:"required"`
-	Method   string                       `json:"method" binding:"required"`
-	Message  interface{}                  `json:"message"`
-	MetaData interface{}                  `json:"metaData"` // Can be null, object, or array
+	Host     string            `json:"host" binding:"required"`
+	Method   string            `json:"method" binding:"required"`
+	Message  interface{}       `json:"message"`
+	MetaData map[string]string `json:"metaData,omitempty"` // Flat object format
 }
 
 // CollectionItem represents a single collection item
@@ -26,11 +26,11 @@ type Collection struct {
 
 // SaveCollectionRequest represents the request to save a collection
 type SaveCollectionRequest struct {
-	Host     string                 `json:"host" binding:"required"`
-	Method   string                 `json:"method" binding:"required"`
-	Service  string                 `json:"service"`
-	Message  interface{}            `json:"message"`
-	MetaData interface{}            `json:"metaData"` // Can be null, object, or array
+	Host     string            `json:"host" binding:"required"`
+	Method   string            `json:"method" binding:"required"`
+	Service  string            `json:"service"`
+	Message  interface{}       `json:"message"`
+	MetaData map[string]string `json:"metaData,omitempty"` // Flat object format
 }
 
 // DeleteCollectionRequest represents the request to delete a collection
