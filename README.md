@@ -6,8 +6,10 @@ This is a Golang implementation of the gRPC client application. It provides a RE
 
 ✅ **gRPC Client**: Test and interact with gRPC services  
 ✅ **Server Reflection**: Automatic service discovery  
+✅ **Request Builder**: GUI request builder based on proto  
+✅ **Request Generation**: New Sample request generation based on proto  
 ✅ **Collection Management**: Save and organize requests  
-✅ **React Web UI**: Modern, responsive interface  
+✅ **React Web UI**: Modern, responsive interface,  dark mode supported  
 ✅ **Single Binary**: No dependencies, easy deployment  
 ✅ **Cross-Platform**: Works on macOS, Linux, and Windows  
 ✅ **Homebrew Support**: Easy installation on macOS  
@@ -24,7 +26,7 @@ This is a Golang implementation of the gRPC client application. It provides a RE
 brew tap bhagwati-web/grpc-client
 brew install grpc-client
 
-# Start the server
+# Start the server(terminal)
 grpcstart
 
 # Stop the server  
@@ -37,6 +39,43 @@ grpcstop
 2. Make it executable: `chmod +x grpc-client`
 3. Run: `./grpc-client`
 4. Open browser to: `http://localhost:50051`
+
+## UI Features Guide
+
+The web interface provides several key features to help you work with gRPC services:
+
+### Main Sections
+- **Server Connection** - Connect to gRPC servers and view available services
+- **Request Builder** - Construct and send gRPC requests
+- **Response Viewer** - View responses with syntax highlighting
+- **Collections** - Save and manage frequently used requests
+
+### Key Features
+1. **Sample Request Generation**: Automatically generates sample requests based on method definitions
+2. **GUI Request Builder**: Visual interface for constructing gRPC requests with field validation
+3. **Syntax Highlighting**: Both request and response data are syntax-highlighted
+4. **Request History**: Access your recent requests from the history panel
+5. **Dark/Light Mode**: Toggle between themes for comfortable viewing
+6. **Error Details**: Clear error messages with troubleshooting suggestions
+
+### Making Your First gRPC Call
+
+Once installed, follow these steps to make your first gRPC call:
+
+1. Open `http://localhost:50051` in your browser
+2. In the server input field, enter a public gRPC server (e.g., `grpcb.in:443`)
+3. Click "Connect" to fetch available services
+4. Select a service and method from the dropdown (e.g., `addsvc.Add.Sum`)
+5. Enter the request message in JSON format:
+   ```json
+   {
+     "a": 10,
+     "b": 20
+   }
+   ```
+6. Click "Send Request" to see the response
+
+The UI will display the response and any metadata returned by the server.
 
 ## API Endpoints
 
@@ -57,8 +96,16 @@ grpcstop
 ## Installation and Setup
 
 ### Prerequisites
+
+#### For Running the Application
+- No special requirements for using the pre-built binary
+- For Homebrew installation on macOS: Homebrew package manager
+
+#### For Development
 - Go 1.21 or higher
 - Git
+- Node.js 18+ and npm (for UI development)
+- Make (optional, for using Makefile commands)
 
 ### Clone and Build
 ```bash
@@ -78,14 +125,56 @@ The server will start on port 50051 by default. You can change this by setting t
 PORT=3000 ./grpc-client
 ```
 
+## Configuration
+
 ### Environment Variables
 - `PORT` - Server port (default: 50051)
 - `GIN_MODE` - Gin mode (debug, release, test)
+- `GRPC_GO_LOG_VERBOSITY_LEVEL` - Log verbosity (0-99)
+- `GRPC_GO_LOG_SEVERITY_LEVEL` - Log severity (INFO, WARNING, ERROR)
+- `GRPC_TRACE` - Enable specific gRPC subsystem logging
+- `COLLECTION_PATH` - Custom path for storing collections
+- `MAX_RECEIVE_MESSAGE_LENGTH` - Maximum message size (default: 4MB)
+- `ENABLE_CORS` - Enable CORS for cross-origin requests (true/false)
+
+### Command Line Flags
+```bash
+./grpc-client \
+  --port=3000 \
+  --collection-path=/custom/path \
+  --tls-cert=/path/to/cert.pem \
+  --tls-key=/path/to/key.pem \
+  --max-message-size=8388608
+```
+
+### Configuration File
+Create `config.yaml` in the same directory as the binary:
+
+```yaml
+server:
+  port: 50051
+  host: "0.0.0.0"
+  cors: true
+  
+tls:
+  enabled: false
+  cert_file: ""
+  key_file: ""
+
+storage:
+  collection_path: "~/.grpc-client"
+  max_collections: 1000
+
+logging:
+  level: "info"
+  format: "json"
+```
 
 ## Request Examples
 
 ### Make a gRPC Call
 ```bash
+# Request
 curl -X POST http://localhost:50051/grpc/call \
   -H "Content-Type: application/json" \
   -d '{
@@ -94,11 +183,41 @@ curl -X POST http://localhost:50051/grpc/call \
     "message": {"a": 2, "b": 3},
     "metaData": [{"key": "value"}]
   }'
+
+# Response
+{
+  "success": true,
+  "response": {
+    "sum": 5
+  },
+  "error": null,
+  "metadata": {
+    "content-type": ["application/grpc"]
+  }
+}
 ```
 
 ### Get Server Reflection Data
 ```bash
+# Request
 curl http://localhost:50051/metadata/grpcb.in:443
+
+# Response
+{
+  "services": [
+    {
+      "name": "addsvc.Add",
+      "methods": [
+        {
+          "name": "Sum",
+          "inputType": "AddRequest",
+          "outputType": "AddResponse"
+        }
+      ]
+    }
+  ],
+  "error": null
+}
 ```
 
 ### Save a Collection
@@ -118,47 +237,100 @@ curl -X POST http://localhost:50051/collection/save \
 curl http://localhost:50051/collection/load
 ```
 
-## Project Structure
+## Advanced Usage Examples
 
-```
-go-grpc-client/
-├── main.go                 # Application entry point
-├── go.mod                  # Go module file
-├── controllers/            # HTTP request handlers
-│   ├── grpc_controller.go      # gRPC call handling
-│   ├── reflection_controller.go # Server reflection
-│   └── collection_controller.go # Collection management
-├── models/                 # Data models
-│   └── models.go
-├── constants/              # Application constants
-│   └── constants.go
-└── middleware/             # HTTP middleware
-    └── cors.go
+### Server Streaming
+```json
+{
+  "host": "grpcb.in:443",
+  "method": "streamService.Stream.Numbers",
+  "message": {"start": 1, "end": 10},
+  "streaming": true
+}
 ```
 
-## Key Dependencies
+### Client Streaming
+```json
+{
+  "host": "grpcb.in:443",
+  "method": "streamService.Stream.Sum",
+  "messages": [
+    {"number": 1},
+    {"number": 2},
+    {"number": 3}
+  ],
+  "clientStreaming": true
+}
+```
+
+### Bidirectional Streaming
+```json
+{
+  "host": "grpcb.in:443",
+  "method": "chatService.Chat.Connect",
+  "messages": [
+    {"message": "Hello"},
+    {"message": "How are you?"}
+  ],
+  "bidirectional": true
+}
+```
+
+### Error Handling
+```json
+{
+  "host": "grpcb.in:443",
+  "method": "errorService.Error.Trigger",
+  "message": {"code": "NOT_FOUND"},
+  "timeout": 5000,
+  "retry": {
+    "maxAttempts": 3,
+    "initialBackoff": 1000
+  }
+}
+```
+
+### Working with Deadlines
+```json
+{
+  "host": "grpcb.in:443",
+  "method": "service.Method.Call",
+  "message": {"key": "value"},
+  "deadline": 30000  // 30 seconds
+}
+```
+
+## Feature Comparison
+
+Comparison with other popular gRPC clients:
+
+| Feature                    | gRPC Client | Postman | BloomRPC | gRPCurl | gRPCui |
+|---------------------------|-------------|---------|----------|---------|---------|
+| Server Reflection         | ✅         | ✅      | ✅       | ✅      | ✅      |
+| Cross-Platform           | ✅         | ✅      | ✅       | ✅      | ✅      |
+| Web Interface             | ✅         | ✅      | ✅       | ❌      | ✅      |
+| Open Source              | ✅         | ❌      | ✅       | ✅      | ✅      |
+| Streaming Support         | ✅         | ❌      | ✅       | ✅      | ✅      |
+| Collections/History       | ✅         | ✅      | ❌       | ❌      | ❌      |
+| Sample Request Generation | ✅         | ✅       | ❌       | ❌      | ❌      |
+| GUI Request Builder      | ✅         | ❌      | ❌       | ❌      | ✅      |
+| No Installation Required | ✅         | ❌      | ❌       | ❌      | ❌      |
+
+### Why Choose gRPC Client?
+
+1. **Easy to Use**: Web-based interface with intuitive controls
+2. **No Dependencies**: Single binary deployment
+3. **Full Feature Set**: Supports all gRPC operations
+4. **Developer Friendly**: Built-in debugging tools
+5. **Cross-Platform**: Works on all major operating systems
+
+# Key Dependencies
 
 - **Gin**: Web framework for HTTP routing
 - **grpc-go**: Official gRPC Go library
 - **protoreflect**: gRPC reflection client library
 - **jhump/protoreflect**: Enhanced protobuf reflection utilities
 
-## Migration Notes
-
-This Go implementation maintains API compatibility with the original Java Spring Boot version:
-
-- Same endpoint paths and HTTP methods
-- Same request/response formats
-- Same collection storage format (JSON files in `~/.grpc-client/`)
-- Same sample data structure
-- Same error handling patterns
-
-### Key Differences from Java Version:
-1. **Performance**: Go implementation is generally faster and uses less memory
-2. **Dependencies**: Fewer external dependencies required
-3. **Deployment**: Single binary deployment (no JVM required)
-4. **Error Handling**: Go-style error handling instead of exceptions
-5. **Concurrency**: Native goroutines for better concurrent request handling
 ## Development
 
 ### Building from Source
@@ -198,12 +370,131 @@ docker build -t grpc-client .
 docker run -p 50051:50051 grpc-client
 ```
 
+## Security and Authentication
+
+### TLS/SSL Support
+The client supports both secure (TLS) and insecure gRPC connections:
+
+
+### Authentication Methods
+1. **Basic Authentication**
+   ```json
+   {
+     "metaData":
+      {
+        "authorization": "Basic base64(username:password)"
+      }
+   }
+   ```
+
+2. **Bearer Token**
+   ```json
+   {
+     "metaData": 
+    {
+      "authorization": "Bearer your-token-here"
+    }
+   }
+   ```
+
+3. **Custom Headers**
+   ```json
+   {
+     "metaData": {
+       "x-api-key": "your-api-key",
+       "custom-header": "custom-value"
+       }
+     ]
+   }
+   ```
+
+### Security Best Practices
+- Store sensitive metadata in collections with restricted permissions
+- This tool will run on local system and there are no data will be catured and sent to any third party application servers or cloud.
+- Enable TLS for secure communication between your machine and grpc service
+- Regularly update the client to get security patches
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Cannot connect to gRPC server**
+   - Check if the server address is correct and includes the port
+   - Verify the server is running and accessible
+   - Check if TLS is required (use https:// prefix if needed)
+
+2. **"Failed to load reflection info" error**
+   - Verify the gRPC server has reflection enabled
+   - Check if the server requires authentication
+   - Try using a known public gRPC server (like grpcb.in:443) to test
+
+3. **UI not loading**
+   - Clear browser cache and reload
+   - Check if the correct port is being used
+   - Verify no other service is using port 50051
+
+4. **Permission denied when running binary**
+   - Run `chmod +x grpc-client` to make the binary executable
+   - On macOS, you might need to allow the application in Security & Privacy settings
+
+### Getting Help
+- Open an issue on GitHub for bug reports
+- Check existing issues for similar problems
+- Include your OS version and installation method when reporting issues
+
+
+### Debug Mode
+Run the server in debug mode:
+```bash
+GIN_MODE=debug ./grpc-client
+```
+
+### Network Debugging
+1. Use `tcpdump` to capture gRPC traffic:
+   ```bash
+   tcpdump -i lo0 port 50051 -w grpc.pcap
+   ```
+
+2. Analyze with Wireshark:
+   - Install gRPC dissector
+   - Import the captured file
+   - Filter: `grpc`
+
+### Common Debugging Techniques
+1. **Request/Response Inspection**
+   ```bash
+   # Enable detailed logging
+   ./grpc-client --debug
+   ```
+
+2. **Memory Profiling**
+   ```bash
+   # Enable pprof endpoint
+   ./grpc-client --pprof
+   
+   # Analyze memory usage
+   go tool pprof http://localhost:50051/debug/pprof/heap
+   ```
+
+3. **Performance Tracing**
+   ```bash
+   # Enable tracing
+   ./grpc-client --trace
+   
+   # View traces at
+   http://localhost:50051/debug/traces
+   ```
+
+### Log File Locations
+- Application logs: `/var/log/grpc-client/app.log`
+- Error logs: `/var/log/grpc-client/error.log`
+- Access logs: `/var/log/grpc-client/access.log`
+
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests if applicable
 5. Submit a pull request
 
 ## License
