@@ -12,6 +12,9 @@ This is a Golang implementation of the gRPC client application. It provides a RE
 ✅ **Cross-Platform**: Works on macOS, Linux, and Windows  
 ✅ **Homebrew Support**: Easy installation on macOS  
 
+<img width="1511" height="811" alt="image" src="https://github.com/user-attachments/assets/fa6440fe-8a8f-4528-a36f-e119463a89b7" />
+
+
 ## Quick Start
 
 ### Option 1: Homebrew (macOS)
