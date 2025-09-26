@@ -1,0 +1,344 @@
+import React from "react"
+import { Button } from "@/components/ui/button"
+import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext"
+import { appConfig } from "@/config/config"
+import { toast } from "@/hooks/use-toast"
+import { useGrpcRequest } from "@/hooks/use-grpc-request"
+import { Save, Trash, Wrench, Sparkles, Send } from "lucide-react"
+
+export function RequestActions() {
+    const {
+        serverInfo,
+        setServerInfo,
+        isReady,
+        showRequestBuilder,
+        setShowRequestBuilder,
+        refreshCollection,
+        methodMetadata,
+        setMethodMetadata
+    } = React.useContext(GrpcContext) as GrpcContextProps;
+
+    const { sendGrpcRequest, loading, setLoading } = useGrpcRequest();
+
+    const { host, method, message, metaData } = serverInfo;
+
+    // Clear cached metadata when method changes
+    React.useEffect(() => {
+        if (setMethodMetadata) {
+            setMethodMetadata(null);
+        }
+    }, [method, host]);
+
+    const fetchMethodMetadata = async () => {
+        if (!host || !method) {
+            return null;
+        }
+
+        try {
+            const serviceName = method?.split('.').slice(0, -1).join('.') || '';
+            const methodName = method?.split('.').pop() || '';
+
+            const serviceUrl = `${appConfig.serviceBaseUrl}${appConfig.grpcMetaData}/${host}/${serviceName}/${methodName}`;
+            const response = await fetch(serviceUrl);
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            return data.inputDetails;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    const generateSampleRequest = async () => {
+        if (!host || !method) {
+            toast({ title: "Error!", description: "Host and method are required", variant: "destructive" })
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            // Check if we already have cached metadata
+            let inputDetails = methodMetadata;
+
+            // If no cached metadata, fetch it
+            if (!inputDetails) {
+                inputDetails = await fetchMethodMetadata();
+
+                // Cache the metadata for future use
+                if (setMethodMetadata && inputDetails) {
+                    setMethodMetadata(inputDetails);
+                }
+            }
+
+            if (!inputDetails) {
+                toast({ title: "Error!", description: "Failed to fetch method metadata", variant: "destructive" })
+                setLoading(false);
+                return;
+            }
+
+            // Generate sample message from the metadata
+            let sampleMessage = {};
+
+            if (inputDetails.sampleRequest) {
+                sampleMessage = inputDetails.sampleRequest;
+                toast({ title: "Success!", description: "Sample request generated from predefined template!" })
+            } else if (inputDetails.fields) {
+                // Generate basic sample from field definitions
+                sampleMessage = generateSampleFromFields(inputDetails.fields);
+                toast({ title: "Success!", description: "Sample request generated from field definitions!" })
+            } else {
+                toast({ title: "Info", description: "No sample request available for this method" })
+                setLoading(false);
+                return;
+            }
+
+            if (Object.keys(sampleMessage).length > 0) {
+                setServerInfo({
+                    ...serverInfo,
+                    message: sampleMessage
+                });
+            }
+        } catch (error) {
+            console.error('Sample generation error:', error);
+            toast({ title: "Error!", description: "Failed to generate sample request", variant: "destructive" })
+        }
+        setLoading(false);
+    }    // Helper function to generate sample data from field definitions
+    const generateSampleFromFields = (fields: any[]): any => {
+        const sample: any = {};
+
+        fields.forEach((field: any) => {
+            const { name, type, repeated, isArray, nestedMessage, enumValues } = field;
+
+            // Handle repeated/array fields
+            if (repeated || isArray) {
+                if (nestedMessage && nestedMessage.fields) {
+                    // Array of objects
+                    sample[name] = [generateSampleFromFields(nestedMessage.fields)];
+                } else if (enumValues && enumValues.length > 0) {
+                    // Array of enum values
+                    sample[name] = [enumValues[0].name];
+                } else {
+                    // Array of primitives
+                    sample[name] = [getSampleValue(type, name)];
+                }
+                return;
+            }
+
+            // Handle nested messages (complex objects)
+            if (nestedMessage && nestedMessage.fields) {
+                sample[name] = generateSampleFromFields(nestedMessage.fields);
+                return;
+            }
+
+            // Handle enum types
+            if (enumValues && enumValues.length > 0) {
+                sample[name] = enumValues[0].name;
+                return;
+            }
+
+            // Handle primitive types
+            sample[name] = getSampleValue(type, name);
+        });
+
+        return sample;
+    }
+
+    // Helper function to get sample values for primitive types
+    const getSampleValue = (fieldType: string, fieldName: string): any => {
+        switch (fieldType) {
+            case 'TYPE_STRING':
+                return `sample_${fieldName}`;
+            case 'TYPE_INT32':
+            case 'TYPE_INT64':
+            case 'TYPE_UINT32':
+            case 'TYPE_UINT64':
+            case 'TYPE_SINT32':
+            case 'TYPE_SINT64':
+            case 'TYPE_FIXED32':
+            case 'TYPE_FIXED64':
+            case 'TYPE_SFIXED32':
+            case 'TYPE_SFIXED64':
+                return 123;
+            case 'TYPE_DOUBLE':
+            case 'TYPE_FLOAT':
+                return 123.45;
+            case 'TYPE_BOOL':
+                return true;
+            case 'TYPE_BYTES':
+                return "base64encodeddata";
+            case 'TYPE_MESSAGE':
+                return {};
+            case 'TYPE_ENUM':
+                return "ENUM_VALUE";
+            // Legacy support for lowercase types
+            case 'string':
+                return `sample_${fieldName}`;
+            case 'int32':
+            case 'int64':
+            case 'number':
+                return 123;
+            case 'double':
+            case 'float':
+                return 123.45;
+            case 'bool':
+            case 'boolean':
+                return true;
+            case 'bytes':
+                return "base64encodeddata";
+            default:
+                return `sample_${fieldName}`;
+        }
+    }
+
+    const saveGrpcRequest = async () => {
+        setLoading(true);
+        const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.collectionBaseUrl + appConfig.collectionSaveUrl}`
+
+        // Ensure metaData is always an object, not an array
+        let finalMetaData = metaData;
+        if (Array.isArray(metaData)) {
+            finalMetaData = {};
+            metaData.forEach(item => {
+                if (typeof item === 'object' && item !== null) {
+                    Object.assign(finalMetaData, item);
+                }
+            });
+        } else if (!metaData || typeof metaData !== 'object') {
+            finalMetaData = {};
+        }
+
+        // Ensure all metadata values are strings
+        const stringifiedMetaData: Record<string, string> = {};
+        if (finalMetaData && typeof finalMetaData === 'object') {
+            Object.entries(finalMetaData).forEach(([key, value]) => {
+                stringifiedMetaData[key] = typeof value === 'string' ? value : String(value);
+            });
+        }
+
+        const payload = { message, host, service: method?.split('.').slice(0, -1).join('.'), method, metaData: stringifiedMetaData }
+        const response = await fetch(serviceUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        const data = await response.json()
+        if (data.status === 'success') {
+            toast({ title: "Success!", description: data.message })
+        }
+        else {
+            toast({ title: "Error!", description: data.message, variant: "destructive" })
+        }
+        setLoading(false);
+        if (refreshCollection) {
+            refreshCollection()
+        }
+    }
+
+    const deleteGrpcRequest = async () => {
+        setLoading(true);
+        const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.collectionBaseUrl + appConfig.collectionDeleteUrl}`
+
+        // Ensure metaData is always an object, not an array
+        let finalMetaData = metaData;
+        if (Array.isArray(metaData)) {
+            finalMetaData = {};
+            metaData.forEach(item => {
+                if (typeof item === 'object' && item !== null) {
+                    Object.assign(finalMetaData, item);
+                }
+            });
+        } else if (!metaData || typeof metaData !== 'object') {
+            finalMetaData = {};
+        }
+
+        const payload = { collectionName: host?.split('.')[0], method: method }
+        const response = await fetch(serviceUrl, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(typeof finalMetaData === 'object' && !Array.isArray(finalMetaData) ? finalMetaData : {})
+            },
+            body: JSON.stringify(payload)
+        })
+        const data = await response.json()
+        if (data.status === 'error') {
+            toast({ title: "Error!", description: `${data.message}`, variant: "destructive" })
+            setLoading(false);
+            return
+        }
+        toast({ title: "Success!", description: `${data.message}.` })
+        setLoading(false);
+        if (refreshCollection) {
+            refreshCollection()
+        }
+    }
+
+    if (!isReady) {
+        return null;
+    }
+
+    return (
+        <div className="flex justify-between items-start gap-4">
+            <div className="mt-2 flex gap-2">
+                <Button
+                    size="sm"
+                    type="button"
+                    variant="destructive"
+                    disabled={!method || loading}
+                    onClick={() => sendGrpcRequest()}
+                >
+                    <Send className="h-4 w-4" />
+                    {loading ? 'Sending...' : 'Send'}
+                </Button>
+            </div>
+            <div className="mt-2 flex gap-4">
+                <Button
+                    variant={showRequestBuilder ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowRequestBuilder(!showRequestBuilder)}
+                    title="Toggle Request Builder"
+                >
+                    <Wrench className="h-4 w-4" />
+                    Build Request
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={generateSampleRequest}
+                    disabled={loading}
+                    title="Generate Sample Request"
+                >
+                    <Sparkles className="h-4 w-4" />
+                    {loading ? 'Generating...' : 'Generate'}
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={saveGrpcRequest}
+                    type="button"
+                    disabled={loading}
+                    title="Save gRPC Request"
+                >
+                    <Save className="h-3 w-3" />
+                    {loading ? 'Saving...' : 'Save'}
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={deleteGrpcRequest}
+                    type="button"
+                    disabled={loading}
+                    title="Delete gRPC Request"
+                >
+                    <Trash className="h-3 w-3" />
+                    {loading ? 'Deleting...' : 'Delete'}
+                </Button>
+            </div>
+        </div>
+    )
+}
