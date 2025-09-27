@@ -6,13 +6,13 @@
 set -e
 
 # Show help message
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+show_help() {
     echo "🚀 GRPC Client Release Script"
     echo "============================="
     echo ""
     echo "Usage:"
     echo "  ./release.sh [VERSION]     # Release with specific version"
-    echo "  ./release.sh               # Interactive mode (menu-driven)"
+    echo echo "📦 Updated Versions:"  ./release.sh               # Interactive mode (menu-driven)"
     echo "  ./release.sh --help        # Show this help message"
     echo ""
     echo "Interactive Mode:"
@@ -34,6 +34,11 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     echo "  6. Updates Homebrew formula"
     echo "  7. Creates release directory"
     echo ""
+}
+
+# Show help if requested
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    show_help
     exit 0
 fi
 
@@ -136,125 +141,202 @@ else
     exit 1
 fi
 
-# Step 2: Build the React UI
-echo "⚛️  Building React UI..."
-cd web-ui
+# Step 2: Build React UI and integrate with Go project
+echo "🏗️ Building and integrating React UI..."
+chmod +x build-ui.sh
+./build-ui.sh
 
-# Check if Node.js and npm are available
-if ! command -v npm > /dev/null; then
-    echo "❌ npm not found. Please install Node.js and npm first."
-    exit 1
-fi
+# Step 3: Build binaries for all platforms
+echo "🏗️ Building binaries for all platforms..."
 
-npm install
-npm run build
+# Create release directory
+RELEASE_DIR="$(pwd)/releases/v${VERSION}"
+mkdir -p "$RELEASE_DIR"
 
-# Verify build was successful
-if [ ! -d "dist" ]; then
-    echo "❌ React build failed - dist directory not found"
-    exit 1
-fi
+# Define architectures - Using OS-specific naming conventions:
+# - macOS: arm64 for ARM, amd64 for Intel
+# - Linux: aarch64 for ARM, x86_64 for Intel
+# - Windows: amd64 for Intel
+ARCHITECTURES=(
+    "darwin/arm64/arm64-tahoe"
+    "darwin/arm64/arm64-sequoia"
+    "darwin/arm64/arm64-sonoma"
+    "darwin/arm64/arm64-ventura"
+    "darwin/amd64/sonoma"
+    "darwin/amd64/ventura"
+    "linux/amd64/linux-amd64"
+    "linux/arm64/linux-arm64"  # Go uses arm64, Homebrew formula uses aarch64_linux
+    "windows/amd64/windows-amd64"
+)
 
-cd ..
+# Build and compress for each architecture
+for arch in "${ARCHITECTURES[@]}"; do
+    IFS='/' read -r os arch_type name <<< "$arch"
+    echo "Building for $name..."
+    
+    # Set environment variables for build script
+    export GOOS=$os
+    export GOARCH=$arch_type
+    export OUTPUT_NAME="${RELEASE_DIR}/grpc-client-${VERSION}-${name}"
+    
+    # Call build script
+    if [ "$os" = "windows" ]; then
+        OUTPUT_NAME="${OUTPUT_NAME}.exe" ./build.sh
+        (cd "$RELEASE_DIR" && zip "grpc-client-${VERSION}-${name}.zip" "grpc-client-${VERSION}-${name}.exe" && rm "grpc-client-${VERSION}-${name}.exe")
+    else
+        OUTPUT_NAME="${OUTPUT_NAME}" ./build.sh
+        tar czf "${OUTPUT_NAME}.tar.gz" "${OUTPUT_NAME}" && rm "${OUTPUT_NAME}"
+    fi
+done
 
-# Step 3: Copy React build to Go static directory
-echo "📂 Copying React build to Go static directory..."
-mkdir -p go-grpc-client/static
-cp -r web-ui/dist/* go-grpc-client/static/
-
-# Verify static files were copied
-if [ ! -f "go-grpc-client/static/index.html" ]; then
-    echo "❌ Failed to copy React build files"
-    exit 1
-fi
-
-# Step 4: Build Go binaries
-echo "🏗️ Building Go binaries..."
-./build.sh
-
-# Step 5: Create release directory
-echo "📁 Creating release directory..."
-mkdir -p releases/v${VERSION}
-mv releases/grpc-client-* releases/v${VERSION}/
-
-# Step 6: Calculate SHA256 for all platforms
+# Step 6: Calculate SHA256 for compressed archives
 echo "🔐 Calculating SHA256 for all platforms..."
-INTEL_SHA=$(shasum -a 256 releases/v${VERSION}/grpc-client-darwin-amd64 | cut -d' ' -f1)
-ARM64_SHA=$(shasum -a 256 releases/v${VERSION}/grpc-client-darwin-arm64 | cut -d' ' -f1)
-LINUX_SHA=$(shasum -a 256 releases/v${VERSION}/grpc-client-linux-amd64 | cut -d' ' -f1)
+
+# Initialize variables for each platform
+# macOS ARM64 platforms
+ARM64_TAHOE_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-arm64-tahoe.tar.gz" 2>/dev/null | cut -d' ' -f1)
+ARM64_SEQUOIA_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-arm64-sequoia.tar.gz" 2>/dev/null | cut -d' ' -f1)
+ARM64_SONOMA_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-arm64-sonoma.tar.gz" 2>/dev/null | cut -d' ' -f1)
+ARM64_VENTURA_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-arm64-ventura.tar.gz" 2>/dev/null | cut -d' ' -f1)
+
+# macOS Intel platforms
+SONOMA_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-sonoma.tar.gz" 2>/dev/null | cut -d' ' -f1)
+VENTURA_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-ventura.tar.gz" 2>/dev/null | cut -d' ' -f1)
+
+# Linux platforms (using Linux architecture naming: x86_64 and aarch64)
+LINUX_AMD64_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-linux-amd64.tar.gz" 2>/dev/null | cut -d' ' -f1)
+LINUX_ARM64_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-linux-arm64.tar.gz" 2>/dev/null | cut -d' ' -f1)
+
+# Windows SHA is computed but not used in the formula since Homebrew is for macOS and Linux only
+WINDOWS_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-windows-amd64.zip" 2>/dev/null | cut -d' ' -f1)
+SONOMA_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-sonoma.tar.gz" 2>/dev/null | cut -d' ' -f1)
+VENTURA_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-ventura.tar.gz" 2>/dev/null | cut -d' ' -f1)
+LINUX_AMD64_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-linux-amd64.tar.gz" 2>/dev/null | cut -d' ' -f1)
+WINDOWS_SHA=$(shasum -a 256 "${RELEASE_DIR}/grpc-client-${VERSION}-windows-amd64.zip" 2>/dev/null | cut -d' ' -f1)
 
 # Step 7: Update Homebrew formula with version and SHA256 hashes
 echo "📝 Updating Homebrew formula..."
 
-# Update version
-sed -i.bak "s/version \".*\"/version \"${VERSION}\"/" grpc-client.rb
+# Update version and SHA256 values in formula
+echo "Updating formula SHA256 values..."
+template_file="Formula/grpc-client.rb.template"
+formula_file="Formula/grpc-client.rb"
 
-# Update SHA256 values using awk (still shell, much simpler)
-awk -v intel="$INTEL_SHA" -v arm64="$ARM64_SHA" -v linux="$LINUX_SHA" '
-/sha256/ {
-    sha_count++
-    if (sha_count == 1) {
-        sub(/sha256 "[^"]*"/, "sha256 \"" intel "\"")
-    } else if (sha_count == 2) {
-        sub(/sha256 "[^"]*"/, "sha256 \"" arm64 "\"")
-    } else if (sha_count == 3) {
-        sub(/sha256 "[^"]*"/, "sha256 \"" linux "\"")
-    }
-}
-{ print }
-' grpc-client.rb > grpc-client.rb.tmp && mv grpc-client.rb.tmp grpc-client.rb
+# First verify we have values to update
+echo "SHA256 values to be updated:"
+echo "ARM64 Tahoe:   [${ARM64_TAHOE_SHA:-not built}]"
+echo "ARM64 Sequoia: [${ARM64_SEQUOIA_SHA:-not built}]"
+echo "ARM64 Sonoma:  [${ARM64_SONOMA_SHA:-not built}]"
+echo "ARM64 Ventura: [${ARM64_VENTURA_SHA:-not built}]"
+echo "Sonoma:        [${SONOMA_SHA:-not built}]"
+echo "Ventura:       [${VENTURA_SHA:-not built}]"
+echo "Linux AMD64:   [${LINUX_AMD64_SHA:-not built}]"
 
-# Verify the updates were successful
-if grep -q "version \"${VERSION}\"" grpc-client.rb; then
+# Create a new formula file from template
+cp "$template_file" "$formula_file"
+
+# Update version and all hashes at once with proper handling of quotes
+sed -i.bak -e '
+    s/REPLACE_VERSION/'${VERSION}'/g
+    s/"REPLACE_ARM64_TAHOE_SHA256"/"'${ARM64_TAHOE_SHA:-not built}'"/g
+    s/"REPLACE_ARM64_SEQUOIA_SHA256"/"'${ARM64_SEQUOIA_SHA:-not built}'"/g
+    s/"REPLACE_ARM64_SONOMA_SHA256"/"'${ARM64_SONOMA_SHA:-not built}'"/g
+    s/"REPLACE_ARM64_VENTURA_SHA256"/"'${ARM64_VENTURA_SHA:-not built}'"/g
+    s/"REPLACE_SONOMA_SHA256"/"'${SONOMA_SHA:-not built}'"/g
+    s/"REPLACE_VENTURA_SHA256"/"'${VENTURA_SHA:-not built}'"/g
+    s/"REPLACE_LINUX_AMD64_SHA256"/"'${LINUX_AMD64_SHA:-not built}'"/g
+    s/"REPLACE_LINUX_ARM64_SHA256"/"'${LINUX_ARM64_SHA:-not built}'"/g
+' "$formula_file"
+
+# Clean up backup file
+rm -f "${formula_file}.bak"
+
+# Verify the changes
+echo "Checking updated values:"
+grep "sha256" "$formula_file"
+
+# Verify updates were successful
+if grep -q "version \"${VERSION}\"" Formula/grpc-client.rb; then
     echo "✅ Version updated to ${VERSION}"
 else
     echo "❌ Failed to update version"
 fi
 
-if grep -q "${INTEL_SHA}" grpc-client.rb; then
-    echo "✅ Intel SHA256 updated"
-else
-    echo "❌ Failed to update Intel SHA256"
-fi
-
-if grep -q "${ARM64_SHA}" grpc-client.rb; then
-    echo "✅ ARM64 SHA256 updated"
-else
-    echo "❌ Failed to update ARM64 SHA256"
-fi
-
-if grep -q "${LINUX_SHA}" grpc-client.rb; then
-    echo "✅ Linux SHA256 updated"
-else
-    echo "❌ Failed to update Linux SHA256"
-fi
+# Verify SHA256 updates for each platform
+for hash_var in \
+    ARM64_TAHOE_SHA \
+    ARM64_SEQUOIA_SHA \
+    ARM64_SONOMA_SHA \
+    ARM64_VENTURA_SHA \
+    SONOMA_SHA \
+    VENTURA_SHA \
+    LINUX_AMD64_SHA \
+    LINUX_ARM64_SHA; do
+    hash="${!hash_var}"
+    if [ -n "$hash" ] && grep -q "$hash" Formula/grpc-client.rb; then
+        echo "✅ SHA256 hash verified: $hash"
+    else
+        echo "❌ Failed to verify SHA256 hash for $hash_var: $hash"
+    fi
+done
 
 echo "✅ Updated Homebrew formula with new version and SHA256 hashes"
+
+# Create formula from template
+cp grpc-client.rb.template grpc-client.rb
+
+# Update version and hashes in formula.rb
+sed -i.bak -e "s/REPLACE_VERSION/${VERSION}/g" \
+    -e "s/REPLACE_ARM64_TAHOE_SHA256/${ARM64_TAHOE_SHA}/g" \
+    -e "s/REPLACE_ARM64_SEQUOIA_SHA256/${ARM64_SEQUOIA_SHA}/g" \
+    -e "s/REPLACE_ARM64_SONOMA_SHA256/${ARM64_SONOMA_SHA}/g" \
+    -e "s/REPLACE_ARM64_VENTURA_SHA256/${ARM64_VENTURA_SHA}/g" \
+    -e "s/REPLACE_SONOMA_SHA256/${SONOMA_SHA}/g" \
+    -e "s/REPLACE_VENTURA_SHA256/${VENTURA_SHA}/g" \
+    -e "s/REPLACE_LINUX_AMD64_SHA256/${LINUX_AMD64_SHA}/g" \
+    grpc-client.rb
 
 # Show the updated SHA256 values for verification
 echo ""
 echo "📋 Updated Homebrew formula values:"
 echo "  Version: v${VERSION}"
-echo "  Intel SHA256: ${INTEL_SHA}"
-echo "  ARM64 SHA256: ${ARM64_SHA}"
-echo "  Linux SHA256: ${LINUX_SHA}"
+echo "  arm64_tahoe:   ${ARM64_TAHOE_SHA:-not built}"
+echo "  arm64_sequoia: ${ARM64_SEQUOIA_SHA:-not built}"
+echo "  arm64_sonoma:  ${ARM64_SONOMA_SHA:-not built}"
+echo "  arm64_ventura: ${ARM64_VENTURA_SHA:-not built}"
+echo "  sonoma:        ${SONOMA_SHA:-not built}"
+echo "  ventura:       ${VENTURA_SHA:-not built}"
+echo "  x86_64_linux:  ${LINUX_AMD64_SHA:-not built}"
+echo "  windows:       ${WINDOWS_SHA:-not built}"
 
 echo ""
 echo "✅ Release v${VERSION} prepared successfully!"
 echo ""
 echo "📋 Next steps:"
-echo "  1. Commit the changes: git add . && git commit -m 'Release v${VERSION}'"
-echo "  2. Create and push tag: git tag v${VERSION} && git push origin v${VERSION}"
-echo "  3. Create GitHub release and upload binaries from releases/v${VERSION}/"
+echo "  1. Commit the changes:        git add . && git commit -m 'Release v${VERSION}'"
+echo "  2. Create and push tag:       git tag v${VERSION} && git push origin v${VERSION}"
+echo "  3. Create GitHub release:     Upload binaries from releases/v${VERSION}/"
 echo "  4. Test Homebrew installation"
 echo ""
 echo "🔗 Binaries location: releases/v${VERSION}/"
-echo "🍎 macOS Intel SHA256: ${INTEL_SHA}"
-echo "🍎 macOS ARM64 SHA256: ${ARM64_SHA}"
-echo "🐧 Linux SHA256: ${LINUX_SHA}"
 echo ""
-echo "📝 Updated versions:"
-echo "  • package.json: v${VERSION}"
+echo "📝 SHA256 Hashes Summary:"
+echo "  ARM64 MacOS:"
+echo "    • Tahoe:   ${ARM64_TAHOE_SHA:-not built}"
+echo "    • Sequoia: ${ARM64_SEQUOIA_SHA:-not built}"
+echo "    • Sonoma:  ${ARM64_SONOMA_SHA:-not built}"
+echo "    • Ventura: ${ARM64_VENTURA_SHA:-not built}"
+echo ""
+echo "  Intel MacOS:"
+echo "    • Sonoma:  ${SONOMA_SHA:-not built}"
+echo "    • Ventura: ${VENTURA_SHA:-not built}"
+echo ""
+echo "  Linux Platforms:"
+echo "    • AMD64: ${LINUX_AMD64_SHA:-not built}"
+echo "    • ARM64: ${LINUX_ARM64_SHA:-not built}"
+echo ""
+echo "� Updated Versions:"
+echo "  • package.json:      v${VERSION}"
 echo "  • Homebrew formula: v${VERSION}"
 echo ""
 echo "✨ No Go installation required for end users!"
