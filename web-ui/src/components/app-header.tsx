@@ -9,9 +9,9 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { 
-    Heart, 
-    GitBranchPlus 
+import {
+    Heart,
+    GitBranchPlus
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -62,7 +62,7 @@ export function AppHeader({ title, breadcrumbs = [], showSidebar = true }: AppHe
                 </BreadcrumbList>
             </Breadcrumb>
             {/* Buy Me a Coffee Button */}
-            <div className={`ml-auto ${showSidebar ? 'flex items-center gap-4' : ''}`}>
+            <div className={'ml-auto flex items-center gap-4'}>
                 <ThemeToggle />
                 <a
                     href="https://github.com/bhagwati-web/grpc-client"
