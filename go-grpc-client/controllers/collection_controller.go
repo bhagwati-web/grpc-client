@@ -121,7 +121,7 @@ func (cc *CollectionController) SaveCollection(c *gin.Context) {
 	if err := ioutil.WriteFile(filePath, fileContent, 0644); err != nil {
 		log.Printf("Error writing file: %v", err)
 		c.JSON(http.StatusInternalServerError, models.Response{
-			Message: "Error saving collection",
+			Message: "Error saving collection, please run 'grpcstop' and 'grpcstart' commands in your terminal and try again.",
 			Status:  constants.ResponseStatusError,
 		})
 		return
