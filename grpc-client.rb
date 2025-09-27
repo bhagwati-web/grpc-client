@@ -3,22 +3,22 @@ class GrpcClient < Formula
   homepage "https://bhagwati-web.github.io/grpc-client/"
   license "MIT"
   version "0.0.1"
-  repository "https://github.com/bhagwati-web/grpc-client/releases/download/#{version}"
+  @@repository = "https://github.com/bhagwati-web/grpc-client/releases/download/#{version}"
   @@server_port = "50051"
   @@server_url = "http://localhost:#{@@server_port}"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "#{repository}/grpc-client-darwin-amd64"
+      url "#{@@repository}/grpc-client-darwin-amd64"
       sha256 "4c5836e38715c919ea27b649f9bfae028b31afe9416ac60c57ebe488eefaf7d9"
     else
-      url "#{repository}/grpc-client-darwin-arm64"
+      url "#{@@repository}/grpc-client-darwin-arm64"
       sha256 "81fe1a1e2b05ca8c3d2995feebbd3a1d88e3a95e743bdd670382f1095a586e70"
     end
   end
 
   on_linux do
-    url "#{repository}/grpc-client-linux-amd64"
+    url "#{@@repository}/grpc-client-linux-amd64"
     sha256 "19b20ce3293dc9ec102fde47fb33a9050d4a0c85efdfbefa342a73fe54dd1582"
   end
 
