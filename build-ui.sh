@@ -5,7 +5,7 @@
 
 set -e
 
-echo "⚛️  Building React UI..."
+echo "🏗️  Building GRPC Client UI..."
 cd web-ui
 
 # Check if Node.js and npm are available
