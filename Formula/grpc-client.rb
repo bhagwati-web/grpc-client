@@ -2,7 +2,7 @@ class GrpcClient < Formula
   desc "Homebrew Package for a GRPC client to query the server with integrated React UI"
   homepage "https://bhagwati-web.github.io/grpc-client"
   url "https://bhagwati-web.github.io/grpc-client/grpcui/archive/refs/tags/v0.0.1.tar.gz"
-  sha256 "7fa3039bfa6c06a688c1094177445f759c592be2f04574a234da7a88ab2d0efd"
+  sha256 "214c73fbe6f480c6ccfb02f250b8dd4d3952de8e135cc9654f66c37cba9556c9"
   license "MIT"
   head "https://bhagwati-web.github.io/grpc-client/grpcui.git", branch: "master"
 
@@ -13,21 +13,22 @@ class GrpcClient < Formula
 
   bottle do
     # macOS ARM64 platforms
-    sha256 cellar: :any_skip_relocation, arm64_tahoe:   "8c34780715736b0108b762e6a61c947e7582b91e62d8f87c0adc6eb866831f9e"
-    sha256 cellar: :any_skip_relocation, arm64_sequoia: "af7d3b913708e3a317716a066fd495182d0ae1b74c95993f3920006896bef66c"
-    sha256 cellar: :any_skip_relocation, arm64_sonoma:  "0e013d904a2037d632212fd8a0aa3c014e4b857117805c298f433b597d4c9952"
-    sha256 cellar: :any_skip_relocation, arm64_ventura: "aff0201781b5e0799565d8a1e68b8b97de264c1ef94d82d86a4d387ae1610df8"
+    sha256 cellar: :any_skip_relocation, arm64_tahoe:   "214c73fbe6f480c6ccfb02f250b8dd4d3952de8e135cc9654f66c37cba9556c9"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia: "d24bb707795ae45a63cae04d01a9b0fa533b6d16684f17e18e4a8b4b96d97ab0"
+    sha256 cellar: :any_skip_relocation, arm64_sonoma:  "1a920cff512aaeeec7b8e400f0172916203c0c0c2433b3aa9493a97bdbaea48c"
+    sha256 cellar: :any_skip_relocation, arm64_ventura: "373ffc99cf422db0d0b0022d9ecbc1c8b62e0244b650304141fc7f53aae638f2"
     # macOS Intel platforms
-    sha256 cellar: :any_skip_relocation, sonoma:        "a4a41b206917a178088e0585af0028777acc729128d575e22da3c893c8224efe"
-    sha256 cellar: :any_skip_relocation, ventura:       "524b80b69be678f0b121ae57981301b312ff9fc74b1f6c79ab99bc6c7aecf834"
+    sha256 cellar: :any_skip_relocation, sonoma:        "eacbd647abb18460172fd8d564891debf9bfdfa9d3f2b864113b546efa8b00fc"
+    sha256 cellar: :any_skip_relocation, ventura:       "646df535304309fa1e252a3d3307cec8150e7355572a7d5293d5bf0c2e17aac6"
     # Linux platforms (using Linux architecture naming)
-    sha256 cellar: :any_skip_relocation, arm64_linux:   "c68f2a9248b6db4e78ce62e6501f708d5859481dbdb392ac8b4cbfb97865f35c"
-    sha256 cellar: :any_skip_relocation, x86_64_linux:  "57863a61b85195aec4093999028cf10b9a0f413a15d49cdb9d6f644f2b745a8c"
+    sha256 cellar: :any_skip_relocation, arm64_linux:   "9a4f64272b6556e9b65015dbb23dc58692ebebcd194c54380770b333fed0fdb6"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:  "8c1376d267c3e1c1cf937478e18b5a9343e92f0d39bcb0d5f692c95e7504163d"
   end
 
   # Go binary has no external dependencies - works without Go installed!
   @server_port = "50051"
   @server_url = "http://localhost:#{@server_port}"
+  version "0.0.1"
 
   def install
     # Stop any running grpc-client processes before installation
@@ -49,7 +50,7 @@ class GrpcClient < Formula
     # Kill any grpc-client processes by name
     system "pkill -f grpc-client 2>/dev/null || true"
 
-    system "echo 'Installing new GRPC Client version...'"
+    system "echo 'Installing new GRPC Client version...' #{version}"
 
     # Rename the downloaded binary to a standard name
     bin.install Dir["*"].first => "grpc-client"

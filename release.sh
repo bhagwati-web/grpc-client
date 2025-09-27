@@ -244,8 +244,8 @@ sed -i.bak -e '
     s/"REPLACE_ARM64_VENTURA_SHA256"/"'${ARM64_VENTURA_SHA:-not built}'"/g
     s/"REPLACE_SONOMA_SHA256"/"'${SONOMA_SHA:-not built}'"/g
     s/"REPLACE_VENTURA_SHA256"/"'${VENTURA_SHA:-not built}'"/g
-    s/"REPLACE_LINUX_AMD64_SHA256"/"'${LINUX_AMD64_SHA:-not built}'"/g
     s/"REPLACE_LINUX_ARM64_SHA256"/"'${LINUX_ARM64_SHA:-not built}'"/g
+    s/"REPLACE_LINUX_AMD64_SHA256"/"'${LINUX_AMD64_SHA:-not built}'"/g
 ' "$formula_file"
 
 # Clean up backup file
@@ -270,44 +270,17 @@ for hash_var in \
     ARM64_VENTURA_SHA \
     SONOMA_SHA \
     VENTURA_SHA \
-    LINUX_AMD64_SHA \
-    LINUX_ARM64_SHA; do
+    LINUX_ARM64_SHA \
+    LINUX_AMD64_SHA; do
     hash="${!hash_var}"
     if [ -n "$hash" ] && grep -q "$hash" Formula/grpc-client.rb; then
-        echo "✅ SHA256 hash verified: $hash"
+        echo "✅ SHA256 hash verified for $hash_var: $hash"
     else
         echo "❌ Failed to verify SHA256 hash for $hash_var: $hash"
     fi
 done
 
 echo "✅ Updated Homebrew formula with new version and SHA256 hashes"
-
-# Create formula from template
-cp grpc-client.rb.template grpc-client.rb
-
-# Update version and hashes in formula.rb
-sed -i.bak -e "s/REPLACE_VERSION/${VERSION}/g" \
-    -e "s/REPLACE_ARM64_TAHOE_SHA256/${ARM64_TAHOE_SHA}/g" \
-    -e "s/REPLACE_ARM64_SEQUOIA_SHA256/${ARM64_SEQUOIA_SHA}/g" \
-    -e "s/REPLACE_ARM64_SONOMA_SHA256/${ARM64_SONOMA_SHA}/g" \
-    -e "s/REPLACE_ARM64_VENTURA_SHA256/${ARM64_VENTURA_SHA}/g" \
-    -e "s/REPLACE_SONOMA_SHA256/${SONOMA_SHA}/g" \
-    -e "s/REPLACE_VENTURA_SHA256/${VENTURA_SHA}/g" \
-    -e "s/REPLACE_LINUX_AMD64_SHA256/${LINUX_AMD64_SHA}/g" \
-    grpc-client.rb
-
-# Show the updated SHA256 values for verification
-echo ""
-echo "📋 Updated Homebrew formula values:"
-echo "  Version: v${VERSION}"
-echo "  arm64_tahoe:   ${ARM64_TAHOE_SHA:-not built}"
-echo "  arm64_sequoia: ${ARM64_SEQUOIA_SHA:-not built}"
-echo "  arm64_sonoma:  ${ARM64_SONOMA_SHA:-not built}"
-echo "  arm64_ventura: ${ARM64_VENTURA_SHA:-not built}"
-echo "  sonoma:        ${SONOMA_SHA:-not built}"
-echo "  ventura:       ${VENTURA_SHA:-not built}"
-echo "  x86_64_linux:  ${LINUX_AMD64_SHA:-not built}"
-echo "  windows:       ${WINDOWS_SHA:-not built}"
 
 echo ""
 echo "✅ Release v${VERSION} prepared successfully!"
@@ -332,8 +305,8 @@ echo "    • Sonoma:  ${SONOMA_SHA:-not built}"
 echo "    • Ventura: ${VENTURA_SHA:-not built}"
 echo ""
 echo "  Linux Platforms:"
-echo "    • AMD64: ${LINUX_AMD64_SHA:-not built}"
 echo "    • ARM64: ${LINUX_ARM64_SHA:-not built}"
+echo "    • AMD64: ${LINUX_AMD64_SHA:-not built}"
 echo ""
 echo "� Updated Versions:"
 echo "  • package.json:      v${VERSION}"
