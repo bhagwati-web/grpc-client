@@ -2,23 +2,23 @@ class GrpcClient < Formula
   desc "Homebrew Package for a GRPC client to query the server with integrated React UI"
   homepage "https://bhagwati-web.github.io/homebrew-grpc-client"
   
-  version "0.0.3"
+  version "0.0.1"
   @@server_port = "50051"
   @@server_url = "http://localhost:#{@@server_port}"
 
   on_macos do
     if Hardware::CPU.intel?
       url "https://github.com/bhagwati-web/homebrew-grpc-client/releases/download/#{version}/grpc-client-darwin-amd64"
-      sha256 "1a3da5412a9d9f446665e5a1af29109f887123265491fdda443d2b04d573eb61"
+      sha256 "4c5836e38715c919ea27b649f9bfae028b31afe9416ac60c57ebe488eefaf7d9"
     else
       url "https://github.com/bhagwati-web/homebrew-grpc-client/releases/download/#{version}/grpc-client-darwin-arm64"
-      sha256 "0bbb4aa066f6c22b7fdab22776dbfdfd203c47bdc9299293753232c42608b4b3"
+      sha256 "81fe1a1e2b05ca8c3d2995feebbd3a1d88e3a95e743bdd670382f1095a586e70"
     end
   end
 
   on_linux do
     url "https://github.com/bhagwati-web/homebrew-grpc-client/releases/download/#{version}/grpc-client-linux-amd64"
-    sha256 "94db9f11fb0d8baf2f394f0c75825b9753dd1bf93de2a523c52d59e6b060537a"
+    sha256 "19b20ce3293dc9ec102fde47fb33a9050d4a0c85efdfbefa342a73fe54dd1582"
   end
 
   license "MIT"
