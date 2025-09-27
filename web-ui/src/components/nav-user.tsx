@@ -1,9 +1,9 @@
 "use client"
 
 import {
-  // HelpingHand,
+  HelpingHand,
   ChevronsUpDown,
-  // GitBranchPlus,
+  GitBranchPlus,
   // LogOut,
   Sparkles,
 } from "lucide-react"
@@ -77,7 +77,7 @@ export function NavUser({
                 Settings
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            {/* <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <a href="https://github.com/bhagwati-web/grpc-client" target="_blank" rel="noopener noreferrer">
                 <DropdownMenuItem>
@@ -85,20 +85,20 @@ export function NavUser({
                   Source code
                 </DropdownMenuItem>
               </a>
-            <a href="https://github.com/bhagwati-web/homebrew-grpc-client" target="_blank" rel="noopener noreferrer">
+              {/* <a href="https://github.com/bhagwati-web/homebrew-grpc-client" target="_blank" rel="noopener noreferrer">
               <DropdownMenuItem>
                 <LogOut />
                 Homebrew Client
               </DropdownMenuItem>
-            </a>
+            </a> */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-              <a href="https://buymeacoffee.com/bhagwati1586" target="_blank" rel="noopener noreferrer">
-                <DropdownMenuItem>
-                  <HelpingHand />
-                  Buy me a coffee
-                </DropdownMenuItem>
-              </a> */}
+            <a href="https://buymeacoffee.com/bhagwati1586" target="_blank" rel="noopener noreferrer">
+              <DropdownMenuItem>
+                <HelpingHand />
+                Buy me a coffee
+              </DropdownMenuItem>
+            </a>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

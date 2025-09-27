@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { 
-    // Heart, 
+    Heart, 
     GitBranchPlus 
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -65,7 +65,7 @@ export function AppHeader({ title, breadcrumbs = [], showSidebar = true }: AppHe
             <div className={`ml-auto ${showSidebar ? 'flex items-center gap-4' : ''}`}>
                 <ThemeToggle />
                 <a
-                    href="https://github.com/bhagwati-web/homebrew-grpc-client"
+                    href="https://github.com/bhagwati-web/grpc-client"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
@@ -77,7 +77,7 @@ export function AppHeader({ title, breadcrumbs = [], showSidebar = true }: AppHe
                         Github
                     </Button>
                 </a>
-                {/* <a
+                <a
                     href="https://buymeacoffee.com/bhagwati1586"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -90,7 +90,7 @@ export function AppHeader({ title, breadcrumbs = [], showSidebar = true }: AppHe
                         <Heart className="w-4 h-4 text-red-500" />
                         Buy me a coffee
                     </Button>
-                </a> */}
+                </a>
             </div>
         </header>
     );
