@@ -4,6 +4,7 @@ import {
   HelpingHand,
   ChevronsUpDown,
   GitBranchPlus,
+  HelpCircle,
   // LogOut,
   Sparkles,
 } from "lucide-react"
@@ -39,6 +40,10 @@ export function NavUser({
     window.location.href = '/settings';
   }
 
+  const handleHelpClick = () => {
+    window.location.href = '/help';
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -72,6 +77,11 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem onClick={handleHelpClick}>
+                <HelpCircle />
+                Help
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSettingsClick}>
                 <Sparkles />
                 Settings
@@ -85,12 +95,6 @@ export function NavUser({
                   Source code
                 </DropdownMenuItem>
               </a>
-              {/* <a href="https://github.com/bhagwati-web/homebrew-grpc-client" target="_blank" rel="noopener noreferrer">
-              <DropdownMenuItem>
-                <LogOut />
-                Homebrew Client
-              </DropdownMenuItem>
-            </a> */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <a href="https://buymeacoffee.com/bhagwati1586" target="_blank" rel="noopener noreferrer">

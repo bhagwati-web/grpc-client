@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sidebar"
 import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext"
 import { appConfig } from "@/config/config"
+import { saveMethodData } from "@/utils/app-utils"
 
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -69,9 +70,15 @@ const data = {
 
   const onItemClick = (item: any) => {
     const { message, host, service, requestName, metaData } = item
+    const method = `${service}.${requestName}`;
+    
+    // Save the collection data to session storage so it's treated as user data
+    // This way when user switches away and back, the collection data will be preserved
+    saveMethodData(host, method, metaData || {}, message || {});
+    
     setServerInfo({
       host,
-      method: `${service}.${requestName}`,
+      method,
       metaData: metaData || {},
       message: message || {}
     })

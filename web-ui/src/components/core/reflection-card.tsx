@@ -5,14 +5,15 @@ import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext"
 import { GrpcServerInput } from "@/components/core/grpc-server-input";
 import { AppLoader } from "@/components/shared/app-loader";
 import { ResponseViewer } from "@/components/core/response-viewer";
-import { getGrpcResponse, getRandomLoadingMessage } from "@/utils/app-utils"
+import { getGrpcResponse, getRandomLoadingMessage, scrollToElement } from "@/utils/app-utils"
 import { RequestBuilder } from "@/components/core/request-builder"
 import { AddMetadata } from "./add-metadata"
 import { AddMessage } from "./add-message"
 import { RequestActions } from "./request-actions"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function ReflectionCardWithForm() {
-    const grpcResponseRef = React.useRef(null);
+    const grpcResponseRef = React.useRef<HTMLDivElement>(null);
     const [loadingMessage, setLoadingMessage] = React.useState(getRandomLoadingMessage());
     const {
         loading,
@@ -40,11 +41,10 @@ export function ReflectionCardWithForm() {
         }
     }, [host, method])
 
-     React.useEffect(() => {
-        // Scroll to the bottom of the response viewer when grpcResponse changes
-        const element: any = grpcResponseRef.current;
-        if (element) {
-            element.scrollTop = element.scrollHeight;
+    React.useEffect(() => {
+        // Scroll to the response viewer when grpcResponse changes
+        if (grpcResponse) {
+            scrollToElement(grpcResponseRef);
         }
     }, [grpcResponse]);
 
@@ -56,9 +56,21 @@ export function ReflectionCardWithForm() {
                     <Card className="">
                         <CardContent className="space-y-4 p-4" >
                             <GrpcServerInput />
-                            <AddMetadata />
-                            <AddMessage />
-                            <RequestActions />
+                            {isReady && (
+                                <Tabs defaultValue="message" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="message">3. Build Message</TabsTrigger>
+                                        <TabsTrigger value="metadata">4. Put Metadata</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="message" className="mt-4">
+                                        <AddMessage />
+                                    </TabsContent>
+                                    <TabsContent value="metadata" className="mt-4">
+                                        <AddMetadata />
+                                    </TabsContent>
+                                </Tabs>
+                            )}
+                            {isReady && <RequestActions />}
                         </CardContent>
                     </Card>
                 </div>
