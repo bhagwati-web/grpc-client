@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext";
 import { Button } from "@/components/ui/button"
-import { DynamicField } from "@/components/dynamic-components";
+import { DynamicField } from "@/components/core/dynamic-components";
 import {
     Card,
     CardContent,

@@ -16,8 +16,8 @@ export function AddMetadata() {
     }
     return (
         <div className="add-metadata">
-            <Label htmlFor="hostInput">3. Put Metadata</Label>
-            <CodePreviewer height={isReady ? "150px" : "100px"} response={metaData} readOnly={false} onDataChange={(value) => setServerInfo({ ...serverInfo, metaData: JSON.parse(prettifyJSON(value)) })} />
+            <Label htmlFor="metadata">3. Put Metadata</Label>
+            <CodePreviewer height={Object.keys(metaData || {}).length ? "150px" : "auto"} response={metaData} readOnly={false} onDataChange={(value) => setServerInfo({ ...serverInfo, metaData: JSON.parse(prettifyJSON(value)) })} />
         </div>
     )
 }

@@ -5,6 +5,7 @@ import { appConfig } from "@/config/config"
 import { toast } from "@/hooks/use-toast"
 import { useGrpcRequest } from "@/hooks/use-grpc-request"
 import { Save, Trash, Wrench, Sparkles, Send } from "lucide-react"
+import { generateSampleFromFields } from "@/utils/app-utils"
 
 export function RequestActions() {
     const {
@@ -107,92 +108,6 @@ export function RequestActions() {
             toast({ title: "Error!", description: "Failed to generate sample request", variant: "destructive" })
         }
         setLoading(false);
-    }    // Helper function to generate sample data from field definitions
-    const generateSampleFromFields = (fields: any[]): any => {
-        const sample: any = {};
-
-        fields.forEach((field: any) => {
-            const { name, type, repeated, isArray, nestedMessage, enumValues } = field;
-
-            // Handle repeated/array fields
-            if (repeated || isArray) {
-                if (nestedMessage && nestedMessage.fields) {
-                    // Array of objects
-                    sample[name] = [generateSampleFromFields(nestedMessage.fields)];
-                } else if (enumValues && enumValues.length > 0) {
-                    // Array of enum values
-                    sample[name] = [enumValues[0].name];
-                } else {
-                    // Array of primitives
-                    sample[name] = [getSampleValue(type, name)];
-                }
-                return;
-            }
-
-            // Handle nested messages (complex objects)
-            if (nestedMessage && nestedMessage.fields) {
-                sample[name] = generateSampleFromFields(nestedMessage.fields);
-                return;
-            }
-
-            // Handle enum types
-            if (enumValues && enumValues.length > 0) {
-                sample[name] = enumValues[0].name;
-                return;
-            }
-
-            // Handle primitive types
-            sample[name] = getSampleValue(type, name);
-        });
-
-        return sample;
-    }
-
-    // Helper function to get sample values for primitive types
-    const getSampleValue = (fieldType: string, fieldName: string): any => {
-        switch (fieldType) {
-            case 'TYPE_STRING':
-                return `sample_${fieldName}`;
-            case 'TYPE_INT32':
-            case 'TYPE_INT64':
-            case 'TYPE_UINT32':
-            case 'TYPE_UINT64':
-            case 'TYPE_SINT32':
-            case 'TYPE_SINT64':
-            case 'TYPE_FIXED32':
-            case 'TYPE_FIXED64':
-            case 'TYPE_SFIXED32':
-            case 'TYPE_SFIXED64':
-                return 123;
-            case 'TYPE_DOUBLE':
-            case 'TYPE_FLOAT':
-                return 123.45;
-            case 'TYPE_BOOL':
-                return true;
-            case 'TYPE_BYTES':
-                return "base64encodeddata";
-            case 'TYPE_MESSAGE':
-                return {};
-            case 'TYPE_ENUM':
-                return "ENUM_VALUE";
-            // Legacy support for lowercase types
-            case 'string':
-                return `sample_${fieldName}`;
-            case 'int32':
-            case 'int64':
-            case 'number':
-                return 123;
-            case 'double':
-            case 'float':
-                return 123.45;
-            case 'bool':
-            case 'boolean':
-                return true;
-            case 'bytes':
-                return "base64encodeddata";
-            default:
-                return `sample_${fieldName}`;
-        }
     }
 
     const saveGrpcRequest = async () => {
@@ -283,7 +198,7 @@ export function RequestActions() {
     }
 
     return (
-        <div className="flex justify-between items-start gap-4">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
             <div className="mt-2 flex gap-2">
                 <Button
                     size="sm"
@@ -296,7 +211,7 @@ export function RequestActions() {
                     {loading ? 'Sending...' : 'Send'}
                 </Button>
             </div>
-            <div className="mt-2 flex gap-4">
+            <div className="mt-2 flex flex-wrap gap-4">
                 <Button
                     variant={showRequestBuilder ? "default" : "outline"}
                     size="sm"

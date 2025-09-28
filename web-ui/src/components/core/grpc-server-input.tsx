@@ -89,23 +89,29 @@ export function GrpcServerInput() {
             setLoading(false);
             return;
         }
-
-        try {
-            const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.grpcMetaData}/${encodeURIComponent(normalizedHost)}`
-            const response = await fetch(serviceUrl);
-            const data = await response.json()
-
-            if (data.error) {
-                toast({ title: "Error!", description: data?.error, variant: "destructive" })
-                setLoading(false);
-                return;
-            }
-
-            setReflections(data)
-            saveReflections(normalizedHost, data)
-        } catch (error: any) {
-            toast({ title: "Error!", description: error.message || "Failed to fetch reflections", variant: "destructive" })
+        const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.grpcMetaData}/${encodeURIComponent(normalizedHost)}`
+        const response = await fetch(serviceUrl);
+        const data = await response.json()
+        if(response.status !== 200) {
+            toast({ title: "Error!", description: data?.error || 'Failed to fetch reflections, please check the endpoint and ensure it supports gRPC reflections', variant: "destructive" })
+            setLoading(false);
+            return;
         }
+        
+        if (!data || data.length === 0) {
+            toast({ title: "Error!", description: "No reflections found, possible network error or host does not support gRPC reflections", variant: "destructive" })
+            setLoading(false);
+            return;
+        }
+
+        if (data.error) {
+            toast({ title: "Error!", description: data?.error, variant: "destructive" })
+            setLoading(false);
+            return;
+        }
+
+        setReflections(data)
+        saveReflections(normalizedHost, data)
         setLoading(false);
     }
 

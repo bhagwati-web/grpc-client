@@ -1,4 +1,4 @@
-import { ReflectionCardWithForm } from "@/components/reflection-card"
+import { ReflectionCardWithForm } from "@/components/core/reflection-card"
 import Layout from "@/components/layout"
 
 export default function Page() {
