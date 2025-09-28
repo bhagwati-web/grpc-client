@@ -1,12 +1,44 @@
 import { DEFAULT_CONFIG } from "@/config/constants";
 import { v4 as uuidv4 } from 'uuid';
 
-export const scrollToElement = (elementRef: any) => {
-    if (elementRef && elementRef.current) {
-        setTimeout(() => {
-            elementRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 500);
-    }
+/**
+ * Scrolls to a specific element with multiple fallback methods
+ * @param elementRef - React ref object containing the target element
+ * @param delay - Delay in milliseconds before attempting scroll (default: 100ms)
+ */
+export const scrollToElement = (elementRef: { current: HTMLElement | null }, delay: number = 100) => {
+    if (!elementRef?.current) return;
+
+    setTimeout(() => {
+        const element = elementRef.current;
+        if (!element) return;
+
+        try {
+            // Primary method: scrollIntoView with smooth behavior
+            element.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start',
+                inline: 'nearest'
+            });
+        } catch (error) {
+            // Fallback method: manual scroll calculation
+            try {
+                const rect = element.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const targetPosition = rect.top + scrollTop;
+                
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });
+            } catch (fallbackError) {
+                // Final fallback: immediate scroll without animation
+                const rect = element.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                window.scrollTo(0, rect.top + scrollTop);
+            }
+        }
+    }, delay);
 };
 
 // Function to normalize host by removing protocol prefixes
@@ -248,4 +280,109 @@ export const generateSampleFromFields = (fields: any[]): any => {
     });
 
     return sample;
+}
+
+// Method-specific data storage utilities
+const METHOD_STORAGE_KEY = 'method-specific-data';
+
+interface MethodData {
+    metaData: Record<string, string>;
+    message: any;
+    timestamp: number;
+}
+
+export function saveMethodData(host: string, method: string, metaData: Record<string, string>, message: any) {
+    const storageKey = `${host}:${method}`;
+    const methodStorage = JSON.parse(sessionStorage.getItem(METHOD_STORAGE_KEY) || '{}');
+    
+    methodStorage[storageKey] = {
+        metaData,
+        message,
+        timestamp: Date.now()
+    };
+    
+    sessionStorage.setItem(METHOD_STORAGE_KEY, JSON.stringify(methodStorage));
+}
+
+export function getMethodData(host: string, method: string): MethodData | null {
+    const storageKey = `${host}:${method}`;
+    const methodStorage = JSON.parse(sessionStorage.getItem(METHOD_STORAGE_KEY) || '{}');
+    
+    return methodStorage[storageKey] || null;
+}
+
+// Function to check collection data for a specific method
+export function getCollectionDataForMethod(collection: any[], host: string, method: string): { metaData: Record<string, string>; message: any } | null {
+    if (!collection || !Array.isArray(collection) || !host || !method) {
+        return null;
+    }
+
+    // Extract service and request name from method
+    const methodParts = method.split('.');
+    if (methodParts.length < 2) {
+        return null;
+    }
+    
+    const requestName = methodParts[methodParts.length - 1];
+    const service = methodParts.slice(0, -1).join('.');
+
+    for (const serviceGroup of collection) {
+        if (serviceGroup.items && Array.isArray(serviceGroup.items)) {
+            for (const item of serviceGroup.items) {
+                // Check if this item matches the host, service, and request name
+                if (item.host === host && 
+                    item.service === service && 
+                    item.requestName === requestName) {
+                    return {
+                        metaData: item.metaData || {},
+                        message: item.message || {}
+                    };
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+// Enhanced method data getter that checks both session storage and collection
+export function getMethodDataWithCollection(host: string, method: string, collection: any[]): MethodData {
+    // First check session storage for user modifications
+    const sessionData = getMethodData(host, method);
+    if (sessionData) {
+        return sessionData;
+    }
+
+    // Then check collection data
+    const collectionData = getCollectionDataForMethod(collection, host, method);
+    if (collectionData) {
+        return {
+            metaData: collectionData.metaData,
+            message: collectionData.message,
+            timestamp: Date.now() // Add timestamp for consistency
+        };
+    }
+
+    // Return default if nothing found
+    const defaultData = getDefaultMethodData();
+    return {
+        metaData: defaultData.metaData,
+        message: defaultData.message,
+        timestamp: Date.now()
+    };
+}
+
+export function clearMethodData(host: string, method: string) {
+    const storageKey = `${host}:${method}`;
+    const methodStorage = JSON.parse(sessionStorage.getItem(METHOD_STORAGE_KEY) || '{}');
+    
+    delete methodStorage[storageKey];
+    sessionStorage.setItem(METHOD_STORAGE_KEY, JSON.stringify(methodStorage));
+}
+
+export function getDefaultMethodData(): { metaData: Record<string, string>; message: any } {
+    return {
+        metaData: { ...DEFAULT_CONFIG.metaData },
+        message: {}
+    };
 }

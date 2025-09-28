@@ -4,18 +4,13 @@ import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext"
 import { appConfig } from "@/config/config"
 import { toast } from "@/hooks/use-toast"
 import { useGrpcRequest } from "@/hooks/use-grpc-request"
-import { Save, Trash, Wrench, Sparkles, Send } from "lucide-react"
-import { generateSampleFromFields } from "@/utils/app-utils"
+import { Save, Trash, Send } from "lucide-react"
 
 export function RequestActions() {
     const {
         serverInfo,
-        setServerInfo,
         isReady,
-        showRequestBuilder,
-        setShowRequestBuilder,
         refreshCollection,
-        methodMetadata,
         setMethodMetadata
     } = React.useContext(GrpcContext) as GrpcContextProps;
 
@@ -29,86 +24,6 @@ export function RequestActions() {
             setMethodMetadata(null);
         }
     }, [method, host]);
-
-    const fetchMethodMetadata = async () => {
-        if (!host || !method) {
-            return null;
-        }
-
-        try {
-            const serviceName = method?.split('.').slice(0, -1).join('.') || '';
-            const methodName = method?.split('.').pop() || '';
-
-            const serviceUrl = `${appConfig.serviceBaseUrl}${appConfig.grpcMetaData}/${host}/${serviceName}/${methodName}`;
-            const response = await fetch(serviceUrl);
-            const data = await response.json();
-
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            return data.inputDetails;
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    const generateSampleRequest = async () => {
-        if (!host || !method) {
-            toast({ title: "Error!", description: "Host and method are required", variant: "destructive" })
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            // Check if we already have cached metadata
-            let inputDetails = methodMetadata;
-
-            // If no cached metadata, fetch it
-            if (!inputDetails) {
-                inputDetails = await fetchMethodMetadata();
-
-                // Cache the metadata for future use
-                if (setMethodMetadata && inputDetails) {
-                    setMethodMetadata(inputDetails);
-                }
-            }
-
-            if (!inputDetails) {
-                toast({ title: "Error!", description: "Failed to fetch method metadata", variant: "destructive" })
-                setLoading(false);
-                return;
-            }
-
-            // Generate sample message from the metadata
-            let sampleMessage = {};
-
-            if (inputDetails.sampleRequest) {
-                sampleMessage = inputDetails.sampleRequest;
-                toast({ title: "Success!", description: "Sample request generated from predefined template!" })
-            } else if (inputDetails.fields) {
-                // Generate basic sample from field definitions
-                sampleMessage = generateSampleFromFields(inputDetails.fields);
-                toast({ title: "Success!", description: "Sample request generated from field definitions!" })
-            } else {
-                toast({ title: "Info", description: "No sample request available for this method" })
-                setLoading(false);
-                return;
-            }
-
-            if (Object.keys(sampleMessage).length > 0) {
-                setServerInfo({
-                    ...serverInfo,
-                    message: sampleMessage
-                });
-            }
-        } catch (error) {
-            console.error('Sample generation error:', error);
-            toast({ title: "Error!", description: "Failed to generate sample request", variant: "destructive" })
-        }
-        setLoading(false);
-    }
 
     const saveGrpcRequest = async () => {
         setLoading(true);
@@ -208,29 +123,10 @@ export function RequestActions() {
                     onClick={() => sendGrpcRequest()}
                 >
                     <Send className="h-4 w-4" />
-                    {loading ? 'Sending...' : 'Send'}
+                    {loading ? 'Sending...' : 'Send Request'}
                 </Button>
             </div>
             <div className="mt-2 flex flex-wrap gap-4">
-                <Button
-                    variant={showRequestBuilder ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowRequestBuilder(!showRequestBuilder)}
-                    title="Toggle Request Builder"
-                >
-                    <Wrench className="h-4 w-4" />
-                    Build Request
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={generateSampleRequest}
-                    disabled={loading}
-                    title="Generate Sample Request"
-                >
-                    <Sparkles className="h-4 w-4" />
-                    {loading ? 'Generating...' : 'Generate'}
-                </Button>
                 <Button
                     variant="outline"
                     size="sm"
