@@ -4,11 +4,13 @@ import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext"
 import { appConfig } from "@/config/config"
 import { toast } from "@/hooks/use-toast"
 import { useGrpcRequest } from "@/hooks/use-grpc-request"
+import { getDefaultMethodData } from "@/utils/app-utils"
 import { Save, Trash, Send } from "lucide-react"
 
 export function RequestActions() {
     const {
         serverInfo,
+        setServerInfo,
         isReady,
         refreshCollection,
         setMethodMetadata
@@ -102,6 +104,15 @@ export function RequestActions() {
             return
         }
         toast({ title: "Success!", description: `${data.message}.` })
+        
+        // Reset to default state after successful delete
+        const defaultData = getDefaultMethodData();
+        setServerInfo((prev: any) => ({
+            ...prev,
+            metaData: defaultData.metaData,
+            message: defaultData.message
+        }));
+        
         setLoading(false);
         if (refreshCollection) {
             refreshCollection()

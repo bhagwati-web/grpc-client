@@ -43,9 +43,9 @@ export function ThemeToggle() {
     }
 
     return (
-        <Button 
-            variant="outline" 
-            size="icon" 
+        <Button
+            variant="outline"
+            size="sm"
             onClick={toggleTheme}
             title={getThemeLabel()}
         >

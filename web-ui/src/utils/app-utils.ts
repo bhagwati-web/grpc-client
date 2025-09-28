@@ -2,6 +2,22 @@ import { DEFAULT_CONFIG } from "@/config/constants";
 import { v4 as uuidv4 } from 'uuid';
 
 /**
+ * Simple debounce utility function with cancel method
+ * @param func - Function to debounce
+ * @param delay - Delay in milliseconds
+ * @returns Debounced function with cancel method
+ */
+export const debounce = (func: Function, delay: number) => {
+    let timeoutId: NodeJS.Timeout;
+    const debounced = (...args: any[]) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(null, args), delay);
+    };
+    debounced.cancel = () => clearTimeout(timeoutId);
+    return debounced;
+};
+
+/**
  * Scrolls to a specific element with multiple fallback methods
  * @param elementRef - React ref object containing the target element
  * @param delay - Delay in milliseconds before attempting scroll (default: 100ms)

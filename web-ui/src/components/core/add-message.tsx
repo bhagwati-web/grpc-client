@@ -145,7 +145,7 @@ export function AddMessage() {
                             title="Toggle Request Builder GUI"
                         >
                             <Wrench className="h-4 w-4" />
-                            Build Request
+                            {showRequestBuilder ? 'Hide Request Builder' : 'Use Request Builder'}
                         </Button>
                     </div>
                 </div>

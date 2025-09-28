@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
+import { debounce } from "@/utils/app-utils";
 
 interface KeyValuePair {
     id: string;
@@ -41,9 +42,6 @@ export function KeyValueInput({
             : pairsFromData;
     });
 
-    // Debounce timer ref
-    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
     // Convert pairs array back to object and notify parent
     const notifyParent = useCallback((currentPairs: KeyValuePair[]) => {
         const data: Record<string, string> = {};
@@ -55,28 +53,20 @@ export function KeyValueInput({
         onDataChange(data);
     }, [onDataChange]);
 
-    // Debounced function to notify parent
-    const debouncedNotifyParent = useCallback((currentPairs: KeyValuePair[]) => {
-        // Clear existing timer
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-        }
-        
-        // Set new timer
-        debounceTimerRef.current = setTimeout(() => {
+    // Debounced function to notify parent using shared utility
+    const debouncedNotifyParent = useRef(
+        debounce((currentPairs: KeyValuePair[]) => {
             notifyParent(currentPairs);
-        }, 300); // 300ms debounce delay
-    }, [notifyParent]);
+        }, 300)
+    ).current;
 
     // Notify parent when pairs change (debounced)
     useEffect(() => {
         debouncedNotifyParent(pairs);
         
-        // Cleanup function to clear timer on unmount
+        // Cleanup function to cancel debounce on unmount
         return () => {
-            if (debounceTimerRef.current) {
-                clearTimeout(debounceTimerRef.current);
-            }
+            debouncedNotifyParent.cancel();
         };
     }, [pairs, debouncedNotifyParent]);
 

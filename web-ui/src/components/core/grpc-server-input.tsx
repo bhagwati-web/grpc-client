@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select"
 import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext"
 import { appConfig } from "@/config/config"
-import { getReflections, saveReflections, saveGrpcResponse, normalizeHost, saveMethodData, getMethodData, getDefaultMethodData, getMethodDataWithCollection } from "@/utils/app-utils"
+import { getReflections, saveReflections, saveGrpcResponse, normalizeHost, saveMethodData, getMethodData, getDefaultMethodData, getMethodDataWithCollection, debounce } from "@/utils/app-utils"
 import { toast } from "@/hooks/use-toast"
 import { useGrpcRequest } from "@/hooks/use-grpc-request"
 import { Send, RefreshCw } from "lucide-react"
@@ -29,20 +29,73 @@ export function GrpcServerInput() {
     const { sendGrpcRequest, loading, setLoading } = useGrpcRequest();
     const [reflections, setReflections] = React.useState([]);
     const [methodName, setMethodName] = React.useState('');
-    const debounceRef = React.useRef<number | undefined>(undefined);
     const { host, method } = serverInfo;
 
+    // Function to fetch reflections
+    const fetchGrpcReflections = async (e: any, forceFetch: boolean) => {
+        e.preventDefault()
+        setLoading(true);
+        if (!host || host === '') {
+            setLoading(false);
+            return;
+        }
+
+        // Normalize the host by removing protocol prefixes
+        const normalizedHost = normalizeHost(host);
+
+        const localReflections = getReflections(normalizedHost);
+
+        if (localReflections && !forceFetch) {
+            setReflections(localReflections)
+            setLoading(false);
+            return;
+        }
+        const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.grpcMetaData}/${encodeURIComponent(normalizedHost)}`
+        const response = await fetch(serviceUrl);
+        const data = await response.json()
+        if (response.status !== 200) {
+            toast({ title: "Error!", description: data?.error || 'Failed to fetch reflections, please check the endpoint and ensure it supports gRPC reflections', variant: "destructive" })
+            setLoading(false);
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            toast({ title: "Error!", description: "No reflections found, possible network error or host does not support gRPC reflections", variant: "destructive" })
+            setLoading(false);
+            return;
+        }
+
+        if (data.error) {
+            toast({ title: "Error!", description: data?.error, variant: "destructive" })
+            setLoading(false);
+            return;
+        }
+
+        setReflections(data)
+        saveReflections(normalizedHost, data)
+        setLoading(false);
+    }
+
+    // Debounce timer ref
+    const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    // Debounced function for saving method data
+    const debouncedSaveMethodData = React.useRef(
+        debounce((hostValue: string, methodValue: string, metaData: any, message: any) => {
+            saveMethodData(hostValue, methodValue, metaData, message);
+        }, 1000)
+    ).current;
 
     React.useEffect(() => {
         // Clear previous timeout
-        if (debounceRef.current) {
-            window.clearTimeout(debounceRef.current);
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
         }
 
-        // Only debounce if we have a host value
+        // Only fetch reflections if we have a host value
         if (host && host.trim() !== '') {
             // Debounce the API call with 800ms delay
-            debounceRef.current = window.setTimeout(() => {
+            debounceTimerRef.current = setTimeout(() => {
                 fetchGrpcReflections({ preventDefault: () => { } }, false);
             }, 800);
         } else {
@@ -52,8 +105,8 @@ export function GrpcServerInput() {
 
         // Cleanup function to clear timeout
         return () => {
-            if (debounceRef.current) {
-                window.clearTimeout(debounceRef.current);
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
             }
         };
     }, [host]);
@@ -65,14 +118,15 @@ export function GrpcServerInput() {
     // Auto-save current method data when metadata or message changes
     React.useEffect(() => {
         if (host && method && (serverInfo.metaData || serverInfo.message)) {
-            // Debounce the save operation to avoid excessive storage writes
-            const saveTimeout = setTimeout(() => {
-                saveMethodData(host, method, serverInfo.metaData || {}, serverInfo.message || {});
-            }, 1000); // Save after 1 second of inactivity
-
-            return () => clearTimeout(saveTimeout);
+            // Use debounced function to save method data
+            debouncedSaveMethodData(host, method, serverInfo.metaData || {}, serverInfo.message || {});
         }
-    }, [host, method, serverInfo.metaData, serverInfo.message]);
+
+        // Cleanup function to cancel debounced calls
+        return () => {
+            debouncedSaveMethodData.cancel();
+        };
+    }, [host, method, serverInfo.metaData, serverInfo.message, debouncedSaveMethodData]);
 
     const handleHostChange = (e: any) => {
         const newHost = e.target.value;
@@ -140,50 +194,6 @@ export function GrpcServerInput() {
         }
     };
 
-    const fetchGrpcReflections = async (e: any, forceFetch: boolean) => {
-        e.preventDefault()
-        setLoading(true);
-        if (!host || host === '') {
-            setLoading(false);
-            return;
-        }
-
-        // Normalize the host by removing protocol prefixes
-        const normalizedHost = normalizeHost(host);
-
-        const localReflections = getReflections(normalizedHost);
-
-        if (localReflections && !forceFetch) {
-            setReflections(localReflections)
-            setLoading(false);
-            return;
-        }
-        const serviceUrl = `${appConfig.serviceBaseUrl + appConfig.grpcMetaData}/${encodeURIComponent(normalizedHost)}`
-        const response = await fetch(serviceUrl);
-        const data = await response.json()
-        if (response.status !== 200) {
-            toast({ title: "Error!", description: data?.error || 'Failed to fetch reflections, please check the endpoint and ensure it supports gRPC reflections', variant: "destructive" })
-            setLoading(false);
-            return;
-        }
-
-        if (!data || data.length === 0) {
-            toast({ title: "Error!", description: "No reflections found, possible network error or host does not support gRPC reflections", variant: "destructive" })
-            setLoading(false);
-            return;
-        }
-
-        if (data.error) {
-            toast({ title: "Error!", description: data?.error, variant: "destructive" })
-            setLoading(false);
-            return;
-        }
-
-        setReflections(data)
-        saveReflections(normalizedHost, data)
-        setLoading(false);
-    }
-
     return (
         <div className="server-inputs relative">
             <form>
@@ -193,14 +203,14 @@ export function GrpcServerInput() {
                             {/* Host Input and Send Button Row */}
                             <div className="flex items-end gap-2">
                                 <div className="flex-1 min-w-0">
-                                    <Label htmlFor="hostInput">1. Enter gRPC endpoint</Label>
+                                    <Label htmlFor="hostInput">1. Enter gRPC endpoint to start</Label>
                                     <Input
                                         className={reflections.length > 0 ? "rounded-tr-none rounded-br-none" : ""}
                                         id="hostInput"
                                         value={host ? host : ''}
                                         onChange={handleHostChange}
                                         type="text"
-                                        placeholder="Please enter gRPC endpoint"
+                                        placeholder="example.com:443"
                                     />
                                 </div>
                                 {/* Send Button - Fixed width, always in top row */}

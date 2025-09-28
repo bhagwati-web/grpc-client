@@ -11,19 +11,8 @@ import {
 } from "@/components/ui/card"
 import { appConfig } from "@/config/config";
 import { Wrench, X } from "lucide-react";
-import { getServiceNameFromMethod } from "@/utils/app-utils";
+import { getServiceNameFromMethod, debounce } from "@/utils/app-utils";
 import { toast } from "@/hooks/use-toast";
-
-// Simple debounce utility function with cancel method
-const debounce = (func: Function, delay: number) => {
-    let timeoutId: NodeJS.Timeout;
-    const debounced = (...args: any[]) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => func.apply(null, args), delay);
-    };
-    debounced.cancel = () => clearTimeout(timeoutId);
-    return debounced;
-};
 
 export function RequestBuilder() {
     const {

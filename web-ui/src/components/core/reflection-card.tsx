@@ -56,19 +56,21 @@ export function ReflectionCardWithForm() {
                     <Card className="">
                         <CardContent className="space-y-4 p-4" >
                             <GrpcServerInput />
-                            <Tabs defaultValue="message" className="w-full">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="message">3. Build Message</TabsTrigger>
-                                    <TabsTrigger value="metadata">4. Put Metadata</TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="message" className="mt-4">
-                                    <AddMessage />
-                                </TabsContent>
-                                <TabsContent value="metadata" className="mt-4">
-                                    <AddMetadata />
-                                </TabsContent>
-                            </Tabs>
-                            <RequestActions />
+                            {isReady && (
+                                <Tabs defaultValue="message" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="message">3. Build Message</TabsTrigger>
+                                        <TabsTrigger value="metadata">4. Put Metadata</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="message" className="mt-4">
+                                        <AddMessage />
+                                    </TabsContent>
+                                    <TabsContent value="metadata" className="mt-4">
+                                        <AddMetadata />
+                                    </TabsContent>
+                                </Tabs>
+                            )}
+                            {isReady && <RequestActions />}
                         </CardContent>
                     </Card>
                 </div>
