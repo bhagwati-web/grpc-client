@@ -23,7 +23,6 @@ type Environment struct {
 	UpdatedAt   time.Time         `json:"updatedAt"`
 }
 
-
 // RequestAuth represents authentication configuration
 type RequestAuth struct {
 	Type   string            `json:"type"`   // none, bearer, basic, api_key, etc.
