@@ -1,8 +1,8 @@
 import * as React from "react"
 import { Check, GalleryVerticalEnd, Minus, Plus } from "lucide-react"
 
-import { SearchForm } from "@/components/search-form"
-import { NavUser } from "@/components/nav-user"
+import { SearchForm } from "@/components/sidebar/search-form"
+import { NavUser } from "@/components/sidebar/nav-user"
 import {
   Collapsible,
   CollapsibleContent,
@@ -51,6 +51,10 @@ const data = {
     setLoading(true)
     const response = await fetch(`${appConfig.serviceBaseUrl + appConfig.collectionBaseUrl + appConfig.collectionLoadUrl}`)
     const data = await response.json()
+    if (!data) {
+      setLoading(false)
+      return
+    }
     setCollection(data)
     setLoading(false)
   }
@@ -97,7 +101,7 @@ const data = {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {filteredCollection.map((service: any, serviceIndex: any) => (
+            {filteredCollection?.map((service: any, serviceIndex: any) => (
               <Collapsible
                 key={`${service?.title}-${service?.serviceName}-${serviceIndex}`}
                 defaultOpen={serviceIndex === 0}

@@ -2,11 +2,11 @@ import * as React from "react"
 import { Card, CardContent, } from "@/components/ui/card"
 
 import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext"
-import { GrpcServerInput } from "@/components/grpc-server-input";
-import { AppLoader } from "@/components/app-loader";
-import { ResponseViewer } from "@/components/response-viewer";
+import { GrpcServerInput } from "@/components/core/grpc-server-input";
+import { AppLoader } from "@/components/shared/app-loader";
+import { ResponseViewer } from "@/components/core/response-viewer";
 import { getGrpcResponse, getRandomLoadingMessage } from "@/utils/app-utils"
-import { RequestBuilder } from "@/components/request-builder"
+import { RequestBuilder } from "@/components/core/request-builder"
 import { AddMetadata } from "./add-metadata"
 import { AddMessage } from "./add-message"
 import { RequestActions } from "./request-actions"
@@ -40,10 +40,19 @@ export function ReflectionCardWithForm() {
         }
     }, [host, method])
 
+     React.useEffect(() => {
+        // Scroll to the bottom of the response viewer when grpcResponse changes
+        const element: any = grpcResponseRef.current;
+        if (element) {
+            element.scrollTop = element.scrollHeight;
+        }
+    }, [grpcResponse]);
+
+
     return (
         <>
-            <div className="flex gap-4 mb-5">
-                <div className="w-1/2">
+            <div className="flex flex-col gap-4 mb-5 w-full lg:flex-row">
+                <div className="xl:w-1/2 lg:w-full sm:w-full">
                     <Card className="">
                         <CardContent className="space-y-4 p-4" >
                             <GrpcServerInput />
@@ -53,8 +62,8 @@ export function ReflectionCardWithForm() {
                         </CardContent>
                     </Card>
                 </div>
-                <div className="w-1/2">
-                    <div ref={grpcResponseRef} className="grpc-output">
+                <div className="xl:w-1/2 lg:w-full sm:w-full flex flex-col">
+                    <div ref={grpcResponseRef}>
                         {grpcResponse &&
                             <ResponseViewer grpcResponse={grpcResponse} />
                         }

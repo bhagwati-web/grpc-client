@@ -13,7 +13,7 @@ import {
     Heart,
     GitBranchPlus
 } from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { ThemeToggle } from "@/components/shared/theme-toggle"
 
 interface AppHeaderProps {
     title: string;
