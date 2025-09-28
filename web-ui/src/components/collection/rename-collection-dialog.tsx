@@ -25,15 +25,15 @@ export interface Collection {
 }
 
 interface RenameCollectionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   collection: Collection | null;
   onSuccess: () => void;
 }
 
 export function RenameCollectionDialog({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
   collection,
   onSuccess,
 }: RenameCollectionDialogProps) {
@@ -93,7 +93,7 @@ export function RenameCollectionDialog({
       });
 
       onSuccess();
-      onClose();
+      onOpenChange(false);
     } catch (error: any) {
       console.error("Error updating collection:", error);
       toast({
@@ -109,11 +109,11 @@ export function RenameCollectionDialog({
   const handleClose = () => {
     setName("");
     setDescription("");
-    onClose();
+    onOpenChange(false);
   };
 
   return (
-    <AlertDialog open={isOpen}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="sm:max-w-[425px]">
         <AlertDialogHeader>
           <AlertDialogTitle>Rename Collection</AlertDialogTitle>

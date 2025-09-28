@@ -16,12 +16,12 @@ import { appConfig } from "@/config/config";
 import { Folder, Plus } from "lucide-react";
 
 interface NewCollectionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 
-export function NewCollectionDialog({ isOpen, onClose, onSuccess }: NewCollectionDialogProps) {
+export function NewCollectionDialog({ open, onOpenChange, onSuccess }: NewCollectionDialogProps) {
   const [collectionName, setCollectionName] = useState("");
   const [collectionDescription, setCollectionDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -61,7 +61,7 @@ export function NewCollectionDialog({ isOpen, onClose, onSuccess }: NewCollectio
         setCollectionDescription("");
         
         // Close dialog and refresh
-        onClose();
+        onOpenChange(false);
         onSuccess();
       } else {
         toast({
@@ -86,12 +86,12 @@ export function NewCollectionDialog({ isOpen, onClose, onSuccess }: NewCollectio
     if (!isCreating) {
       setCollectionName("");
       setCollectionDescription("");
-      onClose();
+      onOpenChange(false);
     }
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={handleClose}>
+    <AlertDialog open={open} onOpenChange={handleClose}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">

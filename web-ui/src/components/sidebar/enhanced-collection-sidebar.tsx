@@ -135,6 +135,7 @@ interface CollectionTreeItemProps {
 // Tree item component for collections
 function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAddRequest, onDeleteCollection, onRenameCollection }: CollectionTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const isReadOnly = isReadOnlyCollection(collection);
 
@@ -200,25 +201,40 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
           </div>
           
           {!isReadOnly && (
-            <DropdownMenu>
+            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => onAddRequest && onAddRequest(collection.id)}>
+                  <DropdownMenuItem onSelect={() => {
+                    setDropdownOpen(false);
+                    setTimeout(() => {
+                      onAddRequest && onAddRequest(collection.id);
+                    }, 100);
+                  }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Request
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => onRenameCollection && onRenameCollection(collection)}>
+                  <DropdownMenuItem onSelect={() => {
+                    setDropdownOpen(false);
+                    setTimeout(() => {
+                      onRenameCollection && onRenameCollection(collection);
+                    }, 100);
+                  }}>
                     <Edit2 className="h-4 w-4 mr-2" />
                     Rename
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
-                    onSelect={() => onDeleteCollection && onDeleteCollection(collection.id)}
+                    onSelect={() => {
+                      setDropdownOpen(false);
+                      setTimeout(() => {
+                        onDeleteCollection && onDeleteCollection(collection.id);
+                      }, 100);
+                    }}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash className="h-4 w-4 mr-2" />
@@ -247,7 +263,7 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
     setLoading,
     setServerInfo,
     version,
-    serverInfo,
+    // serverInfo,
     setRefreshCollection,
   } = React.useContext(GrpcContext) as GrpcContextProps;
 
@@ -260,6 +276,7 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
   const [showDeleteCollectionDialog, setShowDeleteCollectionDialog] = useState(false);
   const [collectionToDelete, setCollectionToDelete] = useState<string | undefined>(undefined);
   const [renameCollection, setRenameCollection] = useState<Collection | null>(null);
+  const [footerDropdownOpen, setFooterDropdownOpen] = useState(false);
 
   // Load workspace on mount
   useEffect(() => {
@@ -473,7 +490,7 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
+            <DropdownMenu open={footerDropdownOpen} onOpenChange={setFooterDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
                   <Settings className="size-4" />
@@ -487,16 +504,31 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
                 align="end"
                 sideOffset={4}
               >
-                <DropdownMenuItem onSelect={() => setShowNewCollectionDialog(true)}>
+                <DropdownMenuItem onSelect={() => {
+                  setFooterDropdownOpen(false);
+                  setTimeout(() => {
+                    setShowNewCollectionDialog(true);
+                  }, 100);
+                }}>
                   <Plus className="size-4 mr-2" />
                   <span>New Collection</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setShowNewRequestDialog(true)}>
+                <DropdownMenuItem onSelect={() => {
+                  setFooterDropdownOpen(false);
+                  setTimeout(() => {
+                    setShowNewRequestDialog(true);
+                  }, 100);
+                }}>
                   <Play className="size-4 mr-2" />
                   <span>New Request</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => window.location.href = '/settings'}>
+                <DropdownMenuItem onSelect={() => {
+                  setFooterDropdownOpen(false);
+                  setTimeout(() => {
+                    window.location.href = '/settings';
+                  }, 100);
+                }}>
                   <Settings className="size-4 mr-2" />
                   <span>Settings</span>
                 </DropdownMenuItem>
@@ -507,8 +539,10 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
       </SidebarFooter>
         {/* Dialogs for creating collections and saving requests */}
         <NewCollectionDialog
-          isOpen={showNewCollectionDialog}
-          onClose={() => setShowNewCollectionDialog(false)}
+          open={showNewCollectionDialog}
+          onOpenChange={(open) => {
+            if (!open) setShowNewCollectionDialog(false);
+          }}
           onSuccess={() => {
             refreshWorkspaceData();
             setShowNewCollectionDialog(false);
@@ -533,8 +567,10 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
         />
 
         <RenameCollectionDialog
-          isOpen={renameCollection !== null}
-          onClose={() => setRenameCollection(null)}
+          open={renameCollection !== null}
+          onOpenChange={(open) => {
+            if (!open) setRenameCollection(null);
+          }}
           collection={renameCollection}
           onSuccess={() => {
             refreshWorkspaceData();
