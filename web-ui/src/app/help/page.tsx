@@ -227,6 +227,18 @@ export default function HelpPage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-4">
                             <div>
+                                <h4 className="font-medium text-red-600 dark:text-red-400">
+                                    Collections not saving properly
+                                </h4>
+                                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                                    <li>• If collections are not saving, restart the gRPC client:</li>
+                                    <li className="ml-4">- Run <code className="bg-muted px-1 py-0.5 rounded">grpcstop</code> to stop the server</li>
+                                    <li className="ml-4">- Run <code className="bg-muted px-1 py-0.5 rounded">grpcstart</code> to start it again</li>
+                                    <li>• This is a known issue and will be fixed in the next version</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
                                 <h4 className="font-medium text-amber-600 dark:text-amber-400">
                                     Cannot connect to gRPC server
                                 </h4>
@@ -298,7 +310,7 @@ export default function HelpPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-4">
                             <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">💡 Why Use REST API?</h4>
                             <p className="text-sm text-blue-700 dark:text-blue-300">
                                 The gRPC Client exposes all functionality through REST endpoints, making it perfect for CLI tools, 
@@ -306,27 +318,71 @@ export default function HelpPage() {
                             </p>
                         </div>
 
+                        <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg mb-4">
+                            <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-2">🏗️ Workspace Architecture (v2 API)</h4>
+                            <p className="text-sm text-purple-700 dark:text-purple-300 mb-2">
+                                The enhanced v2 API introduces a <strong>workspace</strong> concept that contains all your collections, requests, and environments in a structured format:
+                            </p>
+                            <ul className="text-sm text-purple-700 dark:text-purple-300 space-y-1">
+                                <li>• <strong>Workspace</strong> - Root container for your entire setup</li>
+                                <li>• <strong>Collections</strong> - Groups of related requests (e.g., "User API", "Payment API")</li>
+                                <li>• <strong>Requests</strong> - Individual gRPC calls with saved parameters</li>
+                                <li>• <strong>Environments</strong> - Variable sets for different deployment targets</li>
+                            </ul>
+                            <p className="text-sm text-purple-700 dark:text-purple-300 mt-2">
+                                <strong>Benefits:</strong> Better organization, atomic import/export, collection renaming, and future-ready architecture.
+                            </p>
+                        </div>
+
                         {/* API Endpoints */}
                         <div>
                             <h4 className="font-medium text-lg mb-3">Available Endpoints</h4>
-                            <div className="grid gap-3 md:grid-cols-2">
-                                <div className="p-3 border rounded-lg">
-                                    <div className="font-mono text-sm font-medium text-green-600 dark:text-green-400">POST /grpc/call</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Execute gRPC requests</p>
-                                </div>
-                                <div className="p-3 border rounded-lg">
-                                    <div className="font-mono text-sm font-medium text-blue-600 dark:text-blue-400">GET /metadata/:host</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Get server reflection data</p>
-                                </div>
-                                <div className="p-3 border rounded-lg">
-                                    <div className="font-mono text-sm font-medium text-purple-600 dark:text-purple-400">GET /collection/load</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Load saved collections</p>
-                                </div>
-                                <div className="p-3 border rounded-lg">
-                                    <div className="font-mono text-sm font-medium text-orange-600 dark:text-orange-400">POST /collection/save</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Save new collections</p>
+                            
+                            <div className="mb-4">
+                                <h5 className="font-medium text-base mb-2 text-blue-600 dark:text-blue-400">Core gRPC & Reflection</h5>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    <div className="p-3 border rounded-lg">
+                                        <div className="font-mono text-sm font-medium text-green-600 dark:text-green-400">POST /grpc/call</div>
+                                        <p className="text-xs text-muted-foreground mt-1">Execute gRPC requests</p>
+                                    </div>
+                                    <div className="p-3 border rounded-lg">
+                                        <div className="font-mono text-sm font-medium text-blue-600 dark:text-blue-400">GET /metadata/:host</div>
+                                        <p className="text-xs text-muted-foreground mt-1">Get server reflection data</p>
+                                    </div>
                                 </div>
                             </div>
+
+                            <div className="mb-4">
+                                <h5 className="font-medium text-base mb-2 text-purple-600 dark:text-purple-400">Workspace & Collections</h5>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    <div className="p-3 border rounded-lg">
+                                        <div className="font-mono text-sm font-medium text-purple-600 dark:text-purple-400">GET /collection/workspace</div>
+                                        <p className="text-xs text-muted-foreground mt-1">Load complete workspace</p>
+                                    </div>
+                                    <div className="p-3 border rounded-lg">
+                                        <div className="font-mono text-sm font-medium text-purple-600 dark:text-purple-400">GET /collection/workspace/export</div>
+                                        <p className="text-xs text-muted-foreground mt-1">Export entire workspace</p>
+                                    </div>
+                                    <div className="p-3 border rounded-lg">
+                                        <div className="font-mono text-sm font-medium text-purple-600 dark:text-purple-400">POST /collection/workspace/import</div>
+                                        <p className="text-xs text-muted-foreground mt-1">Import workspace backup</p>
+                                    </div>
+                                    <div className="p-3 border rounded-lg">
+                                        <div className="font-mono text-sm font-medium text-indigo-600 dark:text-indigo-400">POST /collection/collections</div>
+                                        <p className="text-xs text-muted-foreground mt-1">Create new collection</p>
+                                    </div>
+                                    <div className="p-3 border rounded-lg">
+                                        <div className="font-mono text-sm font-medium text-indigo-600 dark:text-indigo-400">PUT /collection/collections/:id</div>
+                                        <p className="text-xs text-muted-foreground mt-1">Update collection (rename)</p>
+                                    </div>
+                                    <div className="p-3 border rounded-lg">
+                                        <div className="font-mono text-sm font-medium text-red-600 dark:text-red-400">DELETE /collection/collections/:id</div>
+                                        <p className="text-xs text-muted-foreground mt-1">Delete collection</p>
+                                    </div>
+                                </div>
+                            </div>
+
+
                         </div>
 
                         {/* Basic gRPC Call */}
@@ -385,29 +441,64 @@ export default function HelpPage() {
                             </div>
                         </div>
 
-                        {/* Collection Management */}
+                        {/* Workspace & Collection Management */}
                         <div>
-                            <h4 className="font-medium text-lg mb-3">3. Collection Management</h4>
-                            
-                            <div className="mb-4">
-                                <p className="text-sm font-medium mb-2">Save a Collection:</p>
-                                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
-                                    <code className="text-sm whitespace-pre">{`curl -X POST http://localhost:50051/collection/save \\
+                            <h4 className="font-medium text-lg mb-3">3. Workspace & Collection Management</h4>
+                            <div className="space-y-6">
+                                
+                                <div>
+                                    
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-sm font-medium mb-2">Load Complete Workspace:</p>
+                                            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
+                                                <code className="text-sm whitespace-pre">{`curl http://localhost:50051/collection/workspace`}</code>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-sm font-medium mb-2">Create New Collection:</p>
+                                            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
+                                                <code className="text-sm whitespace-pre">{`curl -X POST http://localhost:50051/collection/collections \\
   -H "Content-Type: application/json" \\
   -d '{
-    "host": "grpcb.in:443",
-    "method": "addsvc.Add.Sum",
-    "message": {"a": 2, "b": 3},
-    "metaData": {"authorization": "Bearer token"}
+    "name": "My API Tests",
+    "description": "Collection for testing my API"
   }'`}</code>
-                                </div>
-                            </div>
+                                            </div>
+                                        </div>
 
-                            <div>
-                                <p className="text-sm font-medium mb-2">Load Collections:</p>
-                                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
-                                    <code className="text-sm whitespace-pre">{`curl http://localhost:50051/collection/load`}</code>
+                                        <div>
+                                            <p className="text-sm font-medium mb-2">Rename Collection:</p>
+                                            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
+                                                <code className="text-sm whitespace-pre">{`curl -X PUT http://localhost:50051/collection/collections/COLLECTION_ID \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Updated Collection Name",
+    "description": "New description"
+  }'`}</code>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-sm font-medium mb-2">Export Workspace (with timestamp):</p>
+                                            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
+                                                <code className="text-sm whitespace-pre">{`curl http://localhost:50051/collection/workspace/export > workspace_backup.json`}</code>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-sm font-medium mb-2">Import Workspace:</p>
+                                            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
+                                                <code className="text-sm whitespace-pre">{`curl -X POST http://localhost:50051/collection/workspace/import \\
+  -H "Content-Type: application/json" \\
+  -d @workspace_backup.json`}</code>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+
+
                             </div>
                         </div>
 
@@ -415,8 +506,12 @@ export default function HelpPage() {
                         <div>
                             <h4 className="font-medium text-lg mb-3">4. JavaScript/AJAX Integration</h4>
                             <p className="text-sm text-muted-foreground mb-3">Integrate into web applications:</p>
-                            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
-                                <code className="text-sm whitespace-pre">{`// Make a gRPC call using fetch
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-sm font-medium mb-2">Make a gRPC Call:</p>
+                                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
+                                        <code className="text-sm whitespace-pre">{`// Make a gRPC call using fetch
 async function callGrpcService() {
   try {
     const response = await fetch('http://localhost:50051/grpc/call', {
@@ -438,6 +533,44 @@ async function callGrpcService() {
     console.error('Error:', error);
   }
 }`}</code>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm font-medium mb-2">Workspace Management with v2 API:</p>
+                                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto">
+                                        <code className="text-sm whitespace-pre">{`// Load workspace and create collection
+async function manageWorkspace() {
+  try {
+    // Load current workspace
+    const workspace = await fetch('http://localhost:50051/collection/workspace');
+    const data = await workspace.json();
+    console.log('Current collections:', data.collections);
+
+    // Create new collection
+    const newCollection = await fetch('http://localhost:50051/collection/collections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'My API Tests',
+        description: 'Collection for testing my API'
+      })
+    });
+    
+    const collection = await newCollection.json();
+    console.log('Created collection:', collection);
+
+    // Export workspace backup
+    const backup = await fetch('http://localhost:50051/collection/workspace/export');
+    const backupData = await backup.json();
+    console.log('Workspace backup created');
+    
+  } catch (error) {
+    console.error('Workspace error:', error);
+  }
+}`}</code>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

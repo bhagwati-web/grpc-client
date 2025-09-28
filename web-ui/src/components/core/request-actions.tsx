@@ -68,7 +68,7 @@ export function RequestActions() {
     React.useEffect(() => {
         const fetchCollections = async () => {
             try {
-                const response = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/workspace`);
+                const response = await fetch(`${appConfig.serviceBaseUrl}/collection/workspace`);
                 const data = await response.json();
                 if (data.collections) {
                     setCollections(data.collections);
@@ -108,7 +108,7 @@ export function RequestActions() {
         setLoading(true);
         try {
             // Update existing request
-            const response = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/requests/${serverInfo.id}`, {
+            const response = await fetch(`${appConfig.serviceBaseUrl}/collection/requests/${serverInfo.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -184,7 +184,7 @@ export function RequestActions() {
         // Refresh collections list
         const fetchCollections = async () => {
             try {
-                const response = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/workspace`);
+                const response = await fetch(`${appConfig.serviceBaseUrl}/collection/workspace`);
                 const data = await response.json();
                 if (data.collections) {
                     setCollections(data.collections);
@@ -202,7 +202,7 @@ export function RequestActions() {
             const requestId = serverInfo?.id;
             let serviceUrl = '';
             if (requestId) {
-                serviceUrl = `${appConfig.serviceBaseUrl}/v2/collection/requests/${requestId}`;
+                serviceUrl = `${appConfig.serviceBaseUrl}/collection/requests/${requestId}`;
             } else {
                 // fallback to legacy collection delete behavior (not ideal)
                 toast({ title: "Error", description: "No saved request selected to delete. Save the request first or select an existing request.", variant: "destructive" });

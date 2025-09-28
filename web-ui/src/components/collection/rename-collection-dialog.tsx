@@ -72,7 +72,7 @@ export function RenameCollectionDialog({
       };
 
       const response = await fetch(
-        `${appConfig.serviceBaseUrl}/v2/collection/collections/${collection.id}`,
+        `${appConfig.serviceBaseUrl}/collection/collections/${collection.id}`,
         {
           method: "PUT",
           headers: {

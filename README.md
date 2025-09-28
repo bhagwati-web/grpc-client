@@ -88,10 +88,16 @@ The UI will display the response and any metadata returned by the server.
 - `GET /metadata/:host` - Get reflection details for a gRPC server
 - `GET /metadata/:host/:service/:function` - Get specific service function details
 
-### Collection Endpoints
-- `GET /collection/load` - Load all saved collections
-- `POST /collection/save` - Save a new collection
-- `DELETE /collection/delete` - Delete a collection
+### Workspace & Collection Endpoints
+- `GET /collection/workspace` - Load complete workspace
+- `GET /collection/workspace/export` - Export workspace with timestamp
+- `POST /collection/workspace/import` - Import workspace backup
+- `POST /collection/collections` - Create new collection
+- `PUT /collection/collections/:id` - Update collection (rename)
+- `DELETE /collection/collections/:id` - Delete collection
+- `POST /collection/requests` - Save request to collection
+- `PUT /collection/requests/:id` - Update existing request
+- `DELETE /collection/requests/:id` - Delete request
 
 ## Installation and Setup
 
@@ -220,21 +226,33 @@ curl http://localhost:50051/metadata/grpcb.in:443
 }
 ```
 
-### Save a Collection
+### Workspace Management
+
+#### Load Workspace
 ```bash
-curl -X POST http://localhost:50051/collection/save \
+curl http://localhost:50051/collection/workspace
+```
+
+#### Create New Collection
+```bash
+curl -X POST http://localhost:50051/collection/collections \
   -H "Content-Type: application/json" \
   -d '{
-    "host": "grpcb.in:443",
-    "method": "addsvc.Add.Sum",
-    "message": {"a": 2, "b": 3},
-    "metaData": [{"authorization": "Bearer token"}]
+    "name": "My API Tests",
+    "description": "Collection for testing my API"
   }'
 ```
 
-### Load Collections
+#### Export Workspace (with timestamp)
 ```bash
-curl http://localhost:50051/collection/load
+curl http://localhost:50051/collection/workspace/export > workspace_backup.json
+```
+
+#### Import Workspace
+```bash
+curl -X POST http://localhost:50051/collection/workspace/import \
+  -H "Content-Type: application/json" \
+  -d @workspace_backup.json
 ```
 
 ## Advanced Usage Examples
