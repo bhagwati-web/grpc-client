@@ -205,7 +205,7 @@ export function SaveRequestDialog({
           return;
         }
 
-        const createCollectionResponse = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/collections`, {
+        const createCollectionResponse = await fetch(`${appConfig.serviceBaseUrl}/collection/collections`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -274,7 +274,7 @@ export function SaveRequestDialog({
       };
 
       // Save the request
-      const saveResponse = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/requests`, {
+      const saveResponse = await fetch(`${appConfig.serviceBaseUrl}/collection/requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

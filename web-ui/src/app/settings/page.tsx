@@ -20,7 +20,7 @@ export default function SettingsPage() {
             setIsExporting(true);
 
             // Get workspace from the enhanced API
-            const response = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/workspace/export`);
+            const response = await fetch(`${appConfig.serviceBaseUrl}/collection/workspace/export`);
             if (!response.ok) {
                 throw new Error('Failed to fetch workspace');
             }
@@ -88,7 +88,7 @@ export default function SettingsPage() {
             }
 
             // Import the workspace
-            const response = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/workspace/import`, {
+            const response = await fetch(`${appConfig.serviceBaseUrl}/collection/workspace/import`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

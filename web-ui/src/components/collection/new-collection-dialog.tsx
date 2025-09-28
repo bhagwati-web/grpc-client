@@ -39,7 +39,7 @@ export function NewCollectionDialog({ open, onOpenChange, onSuccess }: NewCollec
     setIsCreating(true);
 
     try {
-      const response = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/collections`, {
+      const response = await fetch(`${appConfig.serviceBaseUrl}/collection/collections`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

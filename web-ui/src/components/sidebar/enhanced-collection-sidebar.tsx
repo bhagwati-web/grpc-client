@@ -28,10 +28,10 @@ import {
   Settings,
   ChevronRight,
   ChevronDown,
-  Globe,
   Play,
   Trash,
   Edit2,
+  HelpCircle,
 } from "lucide-react";
 import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext";
 import { appConfig } from "@/config/config";
@@ -55,16 +55,16 @@ import {
 const isReadOnlyCollection = (collection: Collection): boolean => {
   // Only collections that are explicitly marked as samples or have specific system IDs
   return collection.id === 'sample' ||
-         collection.id === 'demo' ||
-         collection.id.startsWith('sample-') ||
-         collection.id.startsWith('demo-') ||
-         // Only if the name is EXACTLY "Sample" or "Demo" (case insensitive)
-         collection.name.toLowerCase() === 'sample' ||
-         collection.name.toLowerCase() === 'demo' ||
-         collection.name.toLowerCase() === 'sample collection' ||
-         collection.name.toLowerCase() === 'demo collection' ||
-         // Only if description explicitly says it's read-only
-         (collection.description?.toLowerCase().includes('read-only') ?? false);
+    collection.id === 'demo' ||
+    collection.id.startsWith('sample-') ||
+    collection.id.startsWith('demo-') ||
+    // Only if the name is EXACTLY "Sample" or "Demo" (case insensitive)
+    collection.name.toLowerCase() === 'sample' ||
+    collection.name.toLowerCase() === 'demo' ||
+    collection.name.toLowerCase() === 'sample collection' ||
+    collection.name.toLowerCase() === 'demo collection' ||
+    // Only if description explicitly says it's read-only
+    (collection.description?.toLowerCase().includes('read-only') ?? false);
 };
 
 // Enhanced types for the new system
@@ -136,7 +136,7 @@ interface CollectionTreeItemProps {
 function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAddRequest, onDeleteCollection, onRenameCollection }: CollectionTreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  
+
   const isReadOnly = isReadOnlyCollection(collection);
 
   // Sort requests by order
@@ -152,18 +152,22 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
           <div className="flex items-center gap-2 w-full min-w-0">
             <div className="flex-shrink-0">
               {request.type === "grpc" ? (
-                <Play className="h-4 w-4 text-blue-500" />
+                <div className="h-4 w-4 rounded-sm bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                  <div className="h-2 w-2 bg-blue-600 dark:bg-blue-400 rounded-sm"></div>
+                </div>
               ) : (
-                <Globe className="h-4 w-4 text-green-500" />
+                <div className="h-4 w-4 rounded-sm bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <div className="h-2 w-2 bg-green-600 dark:bg-green-400 rounded-full"></div>
+                </div>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm truncate">{request.name}</div>
-              <div className="text-xs text-muted-foreground truncate">
+              <div className="font-medium text-xs truncate">{request.name}</div>
+              <div className="text-[9px] text-muted-foreground truncate">
                 {request.type === "grpc" ? request.grpcConfig?.method : request.restConfig?.url}
               </div>
             </div>
-            <span className="text-xs text-muted-foreground bg-muted px-1 py-0.5 rounded">
+            <span className="text-[9px] text-muted-foreground/60 bg-muted/50 px-1 py-0.5 rounded-sm font-mono">
               {request.type.toUpperCase()}
             </span>
           </div>
@@ -189,63 +193,63 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
             )}
             <span>{collection.name}</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground bg-muted px-1 py-0.5 rounded">
+              <span className="text-[9px] text-muted-foreground bg-muted px-1 py-0.5 rounded">
                 {collection.requests.length}
               </span>
               {isReadOnly && (
-                <span className="text-xs text-orange-600 bg-orange-100 dark:bg-orange-900/20 px-1 py-0.5 rounded">
+                <span className="text-[9px] text-orange-600 bg-orange-100 dark:bg-orange-900/20 px-1 py-0.5 rounded">
                   READ-ONLY
                 </span>
               )}
             </div>
           </div>
-          
+
           {!isReadOnly && (
             <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => {
+                <Button variant="ghost" className="p-0" size="sm">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => {
+                  setDropdownOpen(false);
+                  setTimeout(() => {
+                    onAddRequest && onAddRequest(collection.id);
+                  }, 100);
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Request
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => {
+                  setDropdownOpen(false);
+                  setTimeout(() => {
+                    onRenameCollection && onRenameCollection(collection);
+                  }, 100);
+                }}>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => {
                     setDropdownOpen(false);
                     setTimeout(() => {
-                      onAddRequest && onAddRequest(collection.id);
+                      onDeleteCollection && onDeleteCollection(collection.id);
                     }, 100);
-                  }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Request
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => {
-                    setDropdownOpen(false);
-                    setTimeout(() => {
-                      onRenameCollection && onRenameCollection(collection);
-                    }, 100);
-                  }}>
-                    <Edit2 className="h-4 w-4 mr-2" />
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onSelect={() => {
-                      setDropdownOpen(false);
-                      setTimeout(() => {
-                        onDeleteCollection && onDeleteCollection(collection.id);
-                      }, 100);
-                    }}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash className="h-4 w-4 mr-2" />
-                    Delete Collection
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete Collection
+                </DropdownMenuItem>
+              </DropdownMenuContent>
             </DropdownMenu>
           )}
         </div>
       </SidebarGroupLabel>
-      
+
       {isExpanded && (
         <SidebarGroupContent>
           <SidebarMenu>
@@ -292,7 +296,7 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
 
   const refreshWorkspaceData = async () => {
     try {
-      const response = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/workspace`);
+      const response = await fetch(`${appConfig.serviceBaseUrl}/collection/workspace`);
       const data = await response.json();
       setWorkspace(data);
     } catch (error) {
@@ -362,19 +366,19 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
 
     try {
       setLoading(true);
-      const response = await fetch(`${appConfig.serviceBaseUrl}/v2/collection/collections/${collectionToDelete}`, {
+      const response = await fetch(`${appConfig.serviceBaseUrl}/collection/collections/${collectionToDelete}`, {
         method: 'DELETE',
       });
 
       const result = await response.json();
-      
+
       if (result.status === 'success') {
         toast({
           title: "Success",
           description: "Collection deleted successfully",
         });
         // Refresh the sidebar without additional loading state
-        await refreshWorkspaceData(); 
+        await refreshWorkspaceData();
       } else {
         toast({
           title: "Error",
@@ -409,10 +413,10 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
     return filtered.sort((a, b) => {
       const aIsReadOnly = isReadOnlyCollection(a);
       const bIsReadOnly = isReadOnlyCollection(b);
-      
+
       if (aIsReadOnly && !bIsReadOnly) return 1;  // a goes after b
       if (!aIsReadOnly && bIsReadOnly) return -1; // a goes before b
-      
+
       // If both have same read-only status, sort alphabetically
       return a.name.localeCompare(b.name);
     });
@@ -513,6 +517,7 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
                   <Plus className="size-4 mr-2" />
                   <span>New Collection</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => {
                   setFooterDropdownOpen(false);
                   setTimeout(() => {
@@ -532,71 +537,81 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
                   <Settings className="size-4 mr-2" />
                   <span>Settings</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => {
+                  setFooterDropdownOpen(false);
+                  setTimeout(() => {
+                    window.location.href = '/help';
+                  }, 100);
+                }}>
+                  <HelpCircle className="size-4 mr-2" />
+                  <span>Help</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-        {/* Dialogs for creating collections and saving requests */}
-        <NewCollectionDialog
-          open={showNewCollectionDialog}
-          onOpenChange={(open) => {
-            if (!open) setShowNewCollectionDialog(false);
-          }}
-          onSuccess={() => {
-            refreshWorkspaceData();
-            setShowNewCollectionDialog(false);
-          }}
-        />
+      {/* Dialogs for creating collections and saving requests */}
+      <NewCollectionDialog
+        open={showNewCollectionDialog}
+        onOpenChange={(open) => {
+          if (!open) setShowNewCollectionDialog(false);
+        }}
+        onSuccess={() => {
+          refreshWorkspaceData();
+          setShowNewCollectionDialog(false);
+        }}
+      />
 
-        <SaveRequestDialog
-          isOpen={showNewRequestDialog}
-          onClose={() => {
-            setShowNewRequestDialog(false);
-            setInitialCollectionId(undefined);
-          }}
-          serverInfo={{ host: '', method: '', message: {}, metaData: {} }} // Always fresh for sidebar
-          collections={workspace?.collections || []}
-          initialCollectionId={initialCollectionId}
-          prefillFromCurrent={false} // Explicitly set to false for fresh dialogs
-          onSaved={() => {
-            refreshWorkspaceData();
-            setShowNewRequestDialog(false);
-            setInitialCollectionId(undefined);
-          }}
-        />
+      <SaveRequestDialog
+        isOpen={showNewRequestDialog}
+        onClose={() => {
+          setShowNewRequestDialog(false);
+          setInitialCollectionId(undefined);
+        }}
+        serverInfo={{ host: '', method: '', message: {}, metaData: {} }} // Always fresh for sidebar
+        collections={workspace?.collections || []}
+        initialCollectionId={initialCollectionId}
+        prefillFromCurrent={false} // Explicitly set to false for fresh dialogs
+        onSaved={() => {
+          refreshWorkspaceData();
+          setShowNewRequestDialog(false);
+          setInitialCollectionId(undefined);
+        }}
+      />
 
-        <RenameCollectionDialog
-          open={renameCollection !== null}
-          onOpenChange={(open) => {
-            if (!open) setRenameCollection(null);
-          }}
-          collection={renameCollection}
-          onSuccess={() => {
-            refreshWorkspaceData();
-            setRenameCollection(null);
-          }}
-        />
+      <RenameCollectionDialog
+        open={renameCollection !== null}
+        onOpenChange={(open) => {
+          if (!open) setRenameCollection(null);
+        }}
+        collection={renameCollection}
+        onSuccess={() => {
+          refreshWorkspaceData();
+          setRenameCollection(null);
+        }}
+      />
 
-        <AlertDialog open={showDeleteCollectionDialog} onOpenChange={setShowDeleteCollectionDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Collection</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this collection? All requests and folders in this collection will be permanently removed. This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={confirmDeleteCollection}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete Collection
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      <AlertDialog open={showDeleteCollectionDialog} onOpenChange={setShowDeleteCollectionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Collection</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this collection? All requests and folders in this collection will be permanently removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteCollection}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Collection
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </Sidebar>
   );
