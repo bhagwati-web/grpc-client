@@ -1,4 +1,4 @@
-import { AppSidebar } from "@/components/sidebar/app-sidebar"
+import { EnhancedCollectionSidebar } from "@/components/sidebar/enhanced-collection-sidebar"
 import { AppHeader } from "@/components/shared/app-header"
 import {
     SidebarInset,
@@ -33,7 +33,7 @@ export default function Layout({ children, title, breadcrumbs = [], showSidebar 
     return (
         <SidebarProvider>
             <TooltipProvider>
-                <AppSidebar />
+                <EnhancedCollectionSidebar />
                 <SidebarInset>
                     <AppHeader title={title} breadcrumbs={breadcrumbs} showSidebar={true} />
                     <div className="flex flex-1 flex-col gap-4">

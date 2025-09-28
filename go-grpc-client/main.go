@@ -36,9 +36,10 @@ func main() {
 	grpcController := controllers.NewGrpcController()
 	reflectionController := controllers.NewReflectionController()
 	collectionController := controllers.NewCollectionController()
+	enhancedCollectionController := controllers.NewEnhancedCollectionController()
 
 	// Setup routes
-	setupRoutes(router, grpcController, reflectionController, collectionController)
+	setupRoutes(router, grpcController, reflectionController, collectionController, enhancedCollectionController)
 
 	// Get port from environment or use default
 	port := os.Getenv("PORT")
@@ -57,6 +58,7 @@ func setupRoutes(
 	grpcController *controllers.GrpcController,
 	reflectionController *controllers.ReflectionController,
 	collectionController *controllers.CollectionController,
+	enhancedCollectionController *controllers.EnhancedCollectionController,
 ) {
 	// API routes must be defined BEFORE static routes to take precedence
 
@@ -75,7 +77,7 @@ func setupRoutes(
 		metadataGroup.GET("/:host/:service/:functionInput", reflectionController.FetchReflectionServiceFunctionDetails)
 	}
 
-	// Collection routes
+	// Collection routes (legacy)
 	collectionGroup := router.Group("/collection")
 	{
 		collectionGroup.GET("/load", collectionController.LoadCollection)
@@ -83,6 +85,29 @@ func setupRoutes(
 		collectionGroup.DELETE("/delete", collectionController.DeleteCollection)
 		collectionGroup.GET("/export", collectionController.ExportCollections)
 		collectionGroup.POST("/import", collectionController.ImportCollections)
+	}
+
+	// Enhanced Collection routes (new system)
+	enhancedCollectionGroup := router.Group("/v2/collection")
+	{
+		// Workspace management
+		enhancedCollectionGroup.GET("/workspace", enhancedCollectionController.LoadWorkspace)
+		enhancedCollectionGroup.GET("/workspace/export", enhancedCollectionController.ExportWorkspace)
+		enhancedCollectionGroup.POST("/workspace/import", enhancedCollectionController.ImportWorkspace)
+
+		// Collection management
+		enhancedCollectionGroup.POST("/collections", enhancedCollectionController.CreateCollection)
+		enhancedCollectionGroup.PUT("/collections/:id", enhancedCollectionController.UpdateCollection)
+		enhancedCollectionGroup.DELETE("/collections/:id", enhancedCollectionController.DeleteCollection)
+		enhancedCollectionGroup.PUT("/collections/:id/order", enhancedCollectionController.UpdateOrder)
+
+		// Request management
+		enhancedCollectionGroup.POST("/requests", enhancedCollectionController.SaveRequest)
+		enhancedCollectionGroup.PUT("/requests/:requestId", enhancedCollectionController.UpdateRequest)
+		enhancedCollectionGroup.DELETE("/requests/:requestId", enhancedCollectionController.DeleteRequest)
+
+		// Environment management
+		enhancedCollectionGroup.POST("/environments", enhancedCollectionController.CreateEnvironment)
 	}
 
 	// Serve embedded static files - create filesystem for assets subdirectory

@@ -2,7 +2,7 @@ class GrpcClient < Formula
   desc "Homebrew Package for a GRPC client to query the server with integrated React UI"
   homepage "https://bhagwati-web.github.io/grpc-client/"
   license "MIT"
-  version "0.0.3"
+  version "0.0.4"
   @@repository = "https://github.com/bhagwati-web/grpc-client/releases/download/#{version}"
   @@server_port = "50051"
   @@server_url = "http://localhost:#{@@server_port}"
@@ -10,16 +10,16 @@ class GrpcClient < Formula
   on_macos do
     if Hardware::CPU.intel?
       url "#{@@repository}/grpc-client-darwin-amd64"
-      sha256 "fc2b44c1c7c4369b5a383900b56bf49d98136c43effd71cbcd0309992518a436"
+      sha256 "43a12fda92d564d0f33f1f8f5cd09ee19daefcd6be16d1ebaf0f797fe46befe5"
     else
       url "#{@@repository}/grpc-client-darwin-arm64"
-      sha256 "0c265689c48c1786fa6575595764d997a5aa8a04fb8dc9a496738d829ad22204"
+      sha256 "b1dd62a52b97414eb2997c34f0287663586eeb0ed3c4d8cf33a8fe68a3979f4e"
     end
   end
 
   on_linux do
     url "#{@@repository}/grpc-client-linux-amd64"
-    sha256 "9527fd6d598fc1abbba035ea08e0c073aeb73c762a6bfa62a19748b680d6dcf1"
+    sha256 "c670b6aa27063d40458076dd04ae8164976d1e869263ebf82a36d490c682f5ab"
   end
 
 

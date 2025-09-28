@@ -10,4 +10,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      // Proxy API calls to the Go backend
+      '/grpc': 'http://localhost:50051',
+      '/metadata': 'http://localhost:50051',
+      '/collection': 'http://localhost:50051',
+      '/v2': 'http://localhost:50051',
+    },
+  },
 })
