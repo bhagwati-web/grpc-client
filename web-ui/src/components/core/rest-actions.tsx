@@ -78,15 +78,15 @@ export function RestActions({
     const [collections, setCollections] = useState<any[]>([]);
     const [updateLoading, setUpdateLoading] = useState(false);
 
-    // Check if current request belongs to a read-only collection
-    const currentRequestCollection = React.useMemo(() => {
-        if (!currentRequestId || !collections.length) return null;
+    // Check if current request belongs to a read-only collection and get the request
+    const { currentRequestCollection, currentRequest } = React.useMemo(() => {
+        if (!currentRequestId || !collections.length) return { currentRequestCollection: null, currentRequest: null };
         
         for (const collection of collections) {
             const request = collection.requests?.find((r: any) => r.id === currentRequestId);
-            if (request) return collection;
+            if (request) return { currentRequestCollection: collection, currentRequest: request };
         }
-        return null;
+        return { currentRequestCollection: null, currentRequest: null };
     }, [currentRequestId, collections]);
 
     const isCurrentRequestReadOnly = currentRequestCollection ? isReadOnlyCollection(currentRequestCollection) : false;
@@ -149,7 +149,7 @@ export function RestActions({
 
             // Prepare the update payload
             const updatePayload = {
-                name: `${method} ${new URL(url).pathname}`, // Generate name from method and path
+                name: currentRequest?.name || `${method} ${new URL(url).pathname}`, // Preserve original name or fallback to generated name
                 type: "rest",
                 host: new URL(url).origin,
                 restConfig: {

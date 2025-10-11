@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +32,7 @@ import {
   Play,
   Trash,
   Edit2,
+  Copy,
   HelpCircle,
 } from "lucide-react";
 import { GrpcContext, GrpcContextProps } from "@/providers/GrpcContext";
@@ -147,22 +149,29 @@ interface CollectionTreeItemProps {
   onRenameCollection?: (collection: Collection) => void;
 }
 
-// Tree item component for collections
-function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAddRequest, onDeleteCollection, onRenameCollection }: CollectionTreeItemProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
+// Individual request item component
+function RequestItem({ request, collection, onRequestClick, activeRequestId, handleRenameRequest, handleCloneRequest, handleDeleteRequest }: {
+  request: Request;
+  collection: Collection;
+  onRequestClick: (request: Request) => void;
+  activeRequestId: string | undefined;
+  handleRenameRequest: (request: Request) => void;
+  handleCloneRequest: (request: Request, collection: Collection) => void;
+  handleDeleteRequest: (request: Request) => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
   const isReadOnly = isReadOnlyCollection(collection);
 
-  // Sort requests by order
-  const sortedRequests = [...collection.requests].sort((a, b) => a.order - b.order);
-
-  const renderRequests = (requests: Request[], indent: number = 0) => {
-    return requests.map(request => (
-      <SidebarMenuItem key={request.id}>
+  return (
+    <SidebarMenuItem key={request.id}>
+      <div 
+        className="flex items-center w-full hover:bg-sidebar-accent/50 rounded-sm transition-colors"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         <SidebarMenuButton
           onClick={() => onRequestClick(request)}
-          className={`pl-${4 + indent * 4} ${activeRequestId === request.id ? 'bg-sidebar-accent' : ''}`}
+          className={`flex-1 bg-transparent hover:bg-transparent ${activeRequestId === request.id ? 'bg-sidebar-accent' : ''}`}
         >
           <div className="flex items-center gap-2 w-full min-w-0">
             <div className="flex-shrink-0">
@@ -187,7 +196,71 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
             </span>
           </div>
         </SidebarMenuButton>
-      </SidebarMenuItem>
+        
+        {/* Request Actions Dropdown - Only show for non-read-only collections */}
+        {!isReadOnly && (
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className={`h-6 w-6 p-0 transition-opacity ml-1 shrink-0 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => handleRenameRequest(request)}>
+                <Edit2 className="h-4 w-4 mr-2" />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleCloneRequest(request, collection)}>
+                <Copy className="h-4 w-4 mr-2" />
+                Clone
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onSelect={() => handleDeleteRequest(request)}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    </SidebarMenuItem>
+  );
+}
+
+// Tree item component for collections
+function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAddRequest, onDeleteCollection, onRenameCollection, handleRenameRequest, handleCloneRequest, handleDeleteRequest }: CollectionTreeItemProps & {
+  handleRenameRequest: (request: Request) => void;
+  handleCloneRequest: (request: Request, collection: Collection) => void;
+  handleDeleteRequest: (request: Request) => void;
+}) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const isReadOnly = isReadOnlyCollection(collection);
+
+  // Sort requests by order
+  const sortedRequests = [...collection.requests].sort((a, b) => a.order - b.order);
+
+  const renderRequests = (requests: Request[], indent: number = 0) => {
+    return requests.map(request => (
+      <RequestItem 
+        key={request.id} 
+        request={request}
+        collection={collection}
+        onRequestClick={onRequestClick} 
+        activeRequestId={activeRequestId}
+        handleRenameRequest={handleRenameRequest}
+        handleCloneRequest={handleCloneRequest}
+        handleDeleteRequest={handleDeleteRequest}
+      />
     ));
   };
 
@@ -220,7 +293,7 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
           </div>
 
           {!isReadOnly && (
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-0" size="sm">
                   <MoreVertical className="h-4 w-4" />
@@ -278,6 +351,7 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
 }
 
 export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navigate = useNavigate();
   const {
     setLoading,
     setServerInfo,
@@ -296,6 +370,13 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
   const [collectionToDelete, setCollectionToDelete] = useState<string | undefined>(undefined);
   const [renameCollection, setRenameCollection] = useState<Collection | null>(null);
   const [footerDropdownOpen, setFooterDropdownOpen] = useState(false);
+  
+  // Request management state
+  const [showDeleteRequestDialog, setShowDeleteRequestDialog] = useState(false);
+  const [requestToDelete, setRequestToDelete] = useState<Request | null>(null);
+  const [showRenameRequestDialog, setShowRenameRequestDialog] = useState(false);
+  const [requestToRename, setRequestToRename] = useState<Request | null>(null);
+  const [newRequestName, setNewRequestName] = useState<string>("");
 
   // Load workspace on mount
   useEffect(() => {
@@ -364,9 +445,12 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
 
       setActiveRequestId(request.id);
 
+      // Navigate to gRPC page (dashboard)
+      navigate('/');
+
       toast({
         title: "Request Loaded",
-        description: `Loaded "${request.name}" request`,
+        description: `Loaded gRPC request "${request.name}"`,
       });
     } else if (request.type === "rest" && request.restConfig) {
       // Handle REST request loading
@@ -383,12 +467,12 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
 
       setActiveRequestId(request.id);
 
-      // Optionally navigate to REST page if we're not already there
-      // This would require routing logic to navigate to /rest
+      // Navigate to REST page
+      navigate('/rest');
 
       toast({
         title: "REST Request Loaded",
-        description: `Loaded "${request.name}" REST request`,
+        description: `Loaded REST request "${request.name}"`,
       });
     }
   };
@@ -434,6 +518,175 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
       setLoading(false);
       setShowDeleteCollectionDialog(false);
       setCollectionToDelete(undefined);
+    }
+  };
+
+  // Request management handlers
+  const handleRenameRequest = (request: Request) => {
+    setRequestToRename(request);
+    setNewRequestName(request.name);
+    setShowRenameRequestDialog(true);
+  };
+
+  const handleDeleteRequest = (request: Request) => {
+    setRequestToDelete(request);
+    setShowDeleteRequestDialog(true);
+  };
+
+  const handleCloseRenameDialog = (open: boolean) => {
+    if (!open) {
+      setShowRenameRequestDialog(false);
+      setRequestToRename(null);
+      setNewRequestName("");
+    }
+  };
+
+  const handleCloseDeleteRequestDialog = (open: boolean) => {
+    if (!open) {
+      setShowDeleteRequestDialog(false);
+      setRequestToDelete(null);
+    }
+  };
+
+  const handleCloseDeleteCollectionDialog = (open: boolean) => {
+    if (!open) {
+      setShowDeleteCollectionDialog(false);
+      setCollectionToDelete(undefined);
+    }
+  };
+
+  const handleCloneRequest = async (request: Request, collection: Collection) => {
+    try {
+      setLoading(true);
+      
+      // Create a clone of the request with a new name
+      const timestamp = new Date().toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      }).replace(/:/g, '');
+      const cloneName = `${request.name} (Copy ${timestamp})`;
+      const cloneRequest = {
+        ...request,
+        name: cloneName,
+        id: undefined, // Remove ID so backend assigns a new one
+      };
+
+      const response = await fetch(`${appConfig.serviceBaseUrl}/collection/requests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          collectionId: collection.id,
+          request: cloneRequest,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        toast({
+          title: "Success",
+          description: `Request "${cloneName}" cloned successfully`,
+        });
+        await refreshWorkspaceData();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to clone request",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error cloning request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clone request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmRenameRequest = async () => {
+    if (!requestToRename || !newRequestName.trim()) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${appConfig.serviceBaseUrl}/collection/requests/${requestToRename.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newRequestName.trim(),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        toast({
+          title: "Success",
+          description: "Request renamed successfully",
+        });
+        await refreshWorkspaceData();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to rename request",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error renaming request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to rename request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+      setShowRenameRequestDialog(false);
+      setRequestToRename(null);
+      setNewRequestName("");
+    }
+  };
+
+  const confirmDeleteRequest = async () => {
+    if (!requestToDelete) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${appConfig.serviceBaseUrl}/collection/requests/${requestToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        toast({
+          title: "Success",
+          description: "Request deleted successfully",
+        });
+        await refreshWorkspaceData();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to delete request",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+      setShowDeleteRequestDialog(false);
+      setRequestToDelete(null);
     }
   };
 
@@ -515,6 +768,9 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
             }}
             onDeleteCollection={handleDeleteCollection}
             onRenameCollection={setRenameCollection}
+            handleRenameRequest={handleRenameRequest}
+            handleCloneRequest={handleCloneRequest}
+            handleDeleteRequest={handleDeleteRequest}
           />
         ))}
 
@@ -531,7 +787,7 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu open={footerDropdownOpen} onOpenChange={setFooterDropdownOpen}>
+            <DropdownMenu open={footerDropdownOpen} onOpenChange={setFooterDropdownOpen} modal={false}>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
                   <Settings className="size-4" />
@@ -628,7 +884,7 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
         }}
       />
 
-      <AlertDialog open={showDeleteCollectionDialog} onOpenChange={setShowDeleteCollectionDialog}>
+      <AlertDialog open={showDeleteCollectionDialog} onOpenChange={handleCloseDeleteCollectionDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Collection</AlertDialogTitle>
@@ -643,6 +899,61 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete Collection
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Rename Request Dialog */}
+      <AlertDialog open={showRenameRequestDialog} onOpenChange={handleCloseRenameDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rename Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter a new name for "{requestToRename?.name}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              value={newRequestName}
+              onChange={(e) => setNewRequestName(e.target.value)}
+              placeholder="Enter request name"
+              className="w-full"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  confirmRenameRequest();
+                }
+              }}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRenameRequest}
+              disabled={!newRequestName.trim()}
+            >
+              Rename Request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Request Dialog */}
+      <AlertDialog open={showDeleteRequestDialog} onOpenChange={handleCloseDeleteRequestDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{requestToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteRequest}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Request
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
