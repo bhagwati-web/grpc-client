@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Release preparation script for GRPC Client
+# Release preparation script for Pulse API Client
 # This script helps prepare everything for a new release
 
 set -e
 
 # Show help message
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    echo "🚀 GRPC Client Release Script"
-    echo "============================="
+    echo "🚀 Pulse API Client Release Script"
+    echo "=================================="
     echo ""
     echo "Usage:"
     echo "  ./release.sh [VERSION]     # Release with specific version"
@@ -38,8 +38,8 @@ fi
 
 # Check if version was provided as argument, otherwise prompt user
 if [ -z "$1" ]; then
-    echo "🚀 GRPC Client Release Preparation"
-    echo "=================================="
+    echo "🚀 Pulse API Client Release Preparation"
+    echo "======================================="
     echo ""
     
     # Show current version from package.json
@@ -100,7 +100,7 @@ if [ -z "$1" ]; then
         echo "    • web-ui/package.json version to v${VERSION}"
         echo "    • Build React UI and integrate into Go project"
         echo "    • Build Go binaries for all platforms"
-        echo "    • Update Formula/grpc-client.rb with new version and SHA256 hashes"
+        echo "    • Update pulse.rb with new version and SHA256 hashes"
         echo ""
         
         read -p "Continue with release v${VERSION}? (y/N): " -n 1 -r
@@ -142,19 +142,19 @@ echo "🐹 Building Go binaries..."
 # Step 4: Create release directory
 echo "📁 Creating release directory..."
 mkdir -p releases/v${VERSION}
-mv releases/grpc-client-* releases/v${VERSION}/
+mv releases/pulse-* releases/v${VERSION}/
 
 # Step 5: Calculate SHA256 for all platforms
 echo "🔐 Calculating SHA256 for all platforms..."
-INTEL_SHA=$(shasum -a 256 releases/v${VERSION}/grpc-client-darwin-amd64 | cut -d' ' -f1)
-ARM64_SHA=$(shasum -a 256 releases/v${VERSION}/grpc-client-darwin-arm64 | cut -d' ' -f1)
-LINUX_SHA=$(shasum -a 256 releases/v${VERSION}/grpc-client-linux-amd64 | cut -d' ' -f1)
+INTEL_SHA=$(shasum -a 256 releases/v${VERSION}/pulse-darwin-amd64 | cut -d' ' -f1)
+ARM64_SHA=$(shasum -a 256 releases/v${VERSION}/pulse-darwin-arm64 | cut -d' ' -f1)
+LINUX_SHA=$(shasum -a 256 releases/v${VERSION}/pulse-linux-amd64 | cut -d' ' -f1)
 
 # Step 6: Update Homebrew formula with version and SHA256 hashes
 echo "📝 Updating Homebrew formula..."
 
 # Update version
-sed -i.bak "s/version \".*\"/version \"${VERSION}\"/" grpc-client.rb
+sed -i.bak "s/version \".*\"/version \"${VERSION}\"/" pulse.rb
 
 # Update SHA256 values using awk (still shell, much simpler)
 awk -v intel="$INTEL_SHA" -v arm64="$ARM64_SHA" -v linux="$LINUX_SHA" '
@@ -169,28 +169,28 @@ awk -v intel="$INTEL_SHA" -v arm64="$ARM64_SHA" -v linux="$LINUX_SHA" '
     }
 }
 { print }
-' grpc-client.rb > grpc-client.rb.tmp && mv grpc-client.rb.tmp grpc-client.rb
+' pulse.rb > pulse.rb.tmp && mv pulse.rb.tmp pulse.rb
 
 # Verify the updates were successful
-if grep -q "version \"${VERSION}\"" grpc-client.rb; then
+if grep -q "version \"${VERSION}\"" pulse.rb; then
     echo "✅ Version updated to ${VERSION}"
 else
     echo "❌ Failed to update version"
 fi
 
-if grep -q "${INTEL_SHA}" grpc-client.rb; then
+if grep -q "${INTEL_SHA}" pulse.rb; then
     echo "✅ Intel SHA256 updated"
 else
     echo "❌ Failed to update Intel SHA256"
 fi
 
-if grep -q "${ARM64_SHA}" grpc-client.rb; then
+if grep -q "${ARM64_SHA}" pulse.rb; then
     echo "✅ ARM64 SHA256 updated"
 else
     echo "❌ Failed to update ARM64 SHA256"
 fi
 
-if grep -q "${LINUX_SHA}" grpc-client.rb; then
+if grep -q "${LINUX_SHA}" pulse.rb; then
     echo "✅ Linux SHA256 updated"
 else
     echo "❌ Failed to update Linux SHA256"

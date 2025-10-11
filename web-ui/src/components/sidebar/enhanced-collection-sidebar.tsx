@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -40,7 +40,6 @@ import { appConfig } from "@/config/config";
 import { toast } from "@/hooks/use-toast";
 import { saveMethodData } from "@/utils/app-utils";
 import { NewCollectionDialog } from "@/components/collection/new-collection-dialog";
-import { SaveRequestDialog } from "@/components/collection/save-request-dialog";
 import { NewRequestDialog } from "@/components/collection/new-request-dialog";
 import { RenameCollectionDialog } from "@/components/collection/rename-collection-dialog";
 import {
@@ -236,12 +235,13 @@ function RequestItem({ request, collection, onRequestClick, activeRequestId, han
 }
 
 // Tree item component for collections
-function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAddRequest, onDeleteCollection, onRenameCollection, handleRenameRequest, handleCloneRequest, handleDeleteRequest }: CollectionTreeItemProps & {
+function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAddRequest, onDeleteCollection, onRenameCollection, handleRenameRequest, handleCloneRequest, handleDeleteRequest, isExpanded, onToggleExpanded }: CollectionTreeItemProps & {
   handleRenameRequest: (request: Request) => void;
   handleCloneRequest: (request: Request, collection: Collection) => void;
   handleDeleteRequest: (request: Request) => void;
+  isExpanded: boolean;
+  onToggleExpanded: () => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const isReadOnly = isReadOnlyCollection(collection);
@@ -249,7 +249,7 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
   // Sort requests by order
   const sortedRequests = [...collection.requests].sort((a, b) => a.order - b.order);
 
-  const renderRequests = (requests: Request[], indent: number = 0) => {
+  const renderRequests = (requests: Request[]) => {
     return requests.map(request => (
       <RequestItem 
         key={request.id} 
@@ -272,7 +272,7 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
         <div className="flex items-center justify-between w-full">
           <div
             className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={onToggleExpanded}
           >
             {isExpanded ? (
               <ChevronDown className="h-4 w-4" />
@@ -363,6 +363,7 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeRequestId, setActiveRequestId] = useState<string>("");
+  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [showNewCollectionDialog, setShowNewCollectionDialog] = useState(false);
   const [showNewRequestDialog, setShowNewRequestDialog] = useState(false);
   const [initialCollectionId, setInitialCollectionId] = useState<string | undefined>(undefined);
@@ -383,6 +384,9 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
     loadWorkspace();
   }, []);
 
+  // Track if we've processed the initial URL parameter
+  const [hasProcessedInitialUrl, setHasProcessedInitialUrl] = useState(false);
+
   // Register refresh function with GrpcContext
   useEffect(() => {
     if (setRefreshCollection) {
@@ -390,31 +394,38 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
     }
   }, [setRefreshCollection]);
 
-  const refreshWorkspaceData = async () => {
-    try {
-      const response = await fetch(`${appConfig.serviceBaseUrl}/collection/workspace`);
-      const data = await response.json();
-      setWorkspace(data);
-    } catch (error) {
-      console.error("Error loading workspace:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load collections",
-        variant: "destructive",
-      });
+  // Handle URL parameters for request loading and collection expansion
+  const [searchParams] = useSearchParams();
+  
+  useEffect(() => {
+    const requestId = searchParams.get('requestId');
+    
+    if (requestId && workspace && !hasProcessedInitialUrl) {
+      setActiveRequestId(requestId);
+      
+      // Find which collection contains this request and expand it
+      const collectionWithRequest = workspace.collections.find(collection =>
+        collection.requests.some(request => request.id === requestId)
+      );
+      
+      if (collectionWithRequest) {
+        setExpandedCollections(prev => new Set([...prev, collectionWithRequest.id]));
+        
+        // Find the specific request and load it
+        const request = collectionWithRequest.requests.find(r => r.id === requestId);
+        if (request) {
+          // Use setTimeout to ensure this runs after the current render cycle
+          setTimeout(() => {
+            loadRequestData(request);
+            setHasProcessedInitialUrl(true);
+          }, 100);
+        }
+      }
     }
-  };
+  }, [searchParams, workspace, hasProcessedInitialUrl]);
 
-  const loadWorkspace = async () => {
-    try {
-      setLoading(true);
-      await refreshWorkspaceData();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRequestClick = (request: Request) => {
+  // Extract request loading logic into a separate function
+  const loadRequestData = (request: Request) => {
     if (request.type === "grpc" && request.grpcConfig) {
       // Normalize method: prefer grpcConfig.method if fully-qualified, otherwise combine service + method
       let method = request.grpcConfig.method || '';
@@ -443,14 +454,9 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
         message: request.grpcConfig.message || {},
       });
 
-      setActiveRequestId(request.id);
-
-      // Navigate to gRPC page (dashboard)
-      navigate('/');
-
       toast({
         title: "Request Loaded",
-        description: `Loaded gRPC request "${request.name}"`,
+        description: `Loaded gRPC request "${request.name}" from URL`,
       });
     } else if (request.type === "rest" && request.restConfig) {
       // Handle REST request loading
@@ -465,15 +471,48 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
         message: {},
       });
 
-      setActiveRequestId(request.id);
-
-      // Navigate to REST page
-      navigate('/rest');
-
       toast({
         title: "REST Request Loaded",
-        description: `Loaded REST request "${request.name}"`,
+        description: `Loaded REST request "${request.name}" from URL`,
       });
+    }
+  };
+
+  const refreshWorkspaceData = async () => {
+    try {
+      const response = await fetch(`${appConfig.serviceBaseUrl}/collection/workspace`);
+      const data = await response.json();
+      setWorkspace(data);
+    } catch (error) {
+      console.error("Error loading workspace:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load collections",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadWorkspace = async () => {
+    try {
+      setLoading(true);
+      await refreshWorkspaceData();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestClick = (request: Request) => {
+    // Load the request data
+    loadRequestData(request);
+    
+    setActiveRequestId(request.id);
+
+    // Navigate to appropriate page with requestId
+    if (request.type === "grpc") {
+      navigate(`/?requestId=${request.id}`);
+    } else if (request.type === "rest") {
+      navigate(`/rest?requestId=${request.id}`);
     }
   };
 
@@ -723,7 +762,7 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
                   <GalleryVerticalEnd className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">gRPC Client</span>
+                  <span className="truncate font-semibold">Pulse</span>
                   <span className="truncate text-xs">v{version}</span>
                 </div>
               </a>
@@ -771,6 +810,18 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
             handleRenameRequest={handleRenameRequest}
             handleCloneRequest={handleCloneRequest}
             handleDeleteRequest={handleDeleteRequest}
+            isExpanded={expandedCollections.has(collection.id)}
+            onToggleExpanded={() => {
+              setExpandedCollections(prev => {
+                const newSet = new Set(prev);
+                if (newSet.has(collection.id)) {
+                  newSet.delete(collection.id);
+                } else {
+                  newSet.add(collection.id);
+                }
+                return newSet;
+              });
+            }}
           />
         ))}
 

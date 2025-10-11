@@ -228,7 +228,7 @@ export default function SettingsPage() {
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-sm font-medium">Collection Storage:</span>
-                                        <span className="text-sm text-muted-foreground">~/.grpc-client/</span>
+                                        <span className="text-sm text-muted-foreground">~/.pulse/</span>
                                     </div>
                                 </div>
                                 <div className="pt-2">

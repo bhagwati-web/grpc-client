@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🏗️  Building GRPC Client UI..."
+echo "🏗️  Building Pulse API Client UI..."
 cd web-ui
 
 # Check if Node.js and npm are available
@@ -32,11 +32,11 @@ cd ..
 
 # Copy React build to Go static directory
 echo "📂 Copying React build to Go static directory..."
-mkdir -p go-grpc-client/static
-cp -r web-ui/dist/* go-grpc-client/static/
+mkdir -p web-api/static
+cp -r web-ui/dist/* web-api/static/
 
 # Verify static files were copied
-if [ ! -f "go-grpc-client/static/index.html" ]; then
+if [ ! -f "web-api/static/index.html" ]; then
     echo "❌ Failed to copy React build files"
     exit 1
 fi

@@ -89,7 +89,7 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <a href="https://github.com/bhagwati-web/grpc-client" target="_blank" rel="noopener noreferrer">
+              <a href="https://github.com/bhagwati-web/pulse" target="_blank" rel="noopener noreferrer">
                 <DropdownMenuItem>
                   <GitBranchPlus />
                   Source code

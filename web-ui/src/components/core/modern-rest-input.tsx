@@ -1,6 +1,4 @@
 import { useState, useContext, useEffect } from "react";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { RestBodyEditor, type BodyType } from "./rest-body-editor";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

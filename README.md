@@ -1,18 +1,18 @@
-# gRPC Client - Go Implementation
+# Pulse - API Client
 
-This is a Golang implementation of the gRPC client application. It provides a REST API for making gRPC calls with reflection support and collection management.
+Pulse is a modern API client that supports both gRPC and REST protocols. It provides a comprehensive testing environment with reflection support, collection management, and an intuitive web interface.
 
 ## Features
 
-✅ **gRPC Client**: Test and interact with gRPC services  
-✅ **Server Reflection**: Automatic service discovery  
-✅ **Request Builder**: GUI request builder based on proto  
-✅ **Request Generation**: New Sample request generation based on proto  
-✅ **Collection Management**: Save and organize requests  
-✅ **React Web UI**: Modern, responsive interface,  dark mode supported  
+✅ **Dual Protocol Support**: Test both gRPC and REST APIs in one tool  
+✅ **Server Reflection**: Automatic gRPC service discovery  
+✅ **Request Builder**: GUI request builder for both protocols  
+✅ **Sample Generation**: Auto-generate sample requests from proto definitions  
+✅ **Collection Management**: Save, organize, and share API requests  
+✅ **Modern Web UI**: Responsive interface with dark mode support  
+✅ **URL Parameters**: Deep linking to specific requests  
 ✅ **Single Binary**: No dependencies, easy deployment  
 ✅ **Cross-Platform**: Works on macOS, Linux, and Windows  
-✅ **Homebrew Support**: Easy installation on macOS  
 
 <img width="1511" height="811" alt="image" src="https://github.com/user-attachments/assets/fa6440fe-8a8f-4528-a36f-e119463a89b7" />
 
@@ -23,21 +23,21 @@ This is a Golang implementation of the gRPC client application. It provides a RE
 
 ```bash
 # Install via Homebrew
-brew tap bhagwati-web/grpc-client
-brew install grpc-client
+brew tap bhagwati-web/pulse
+brew install pulse
 
 # Start the server(terminal)
-grpcstart
+pulse
 
-# Stop the server  
-grpcstop
+# The binary runs on port 50051 by default
+# Open browser to: http://localhost:50051
 ```
 
 ### Option 2: Direct Binary
 
-1. Download the binary for your platform from [Releases](https://github.com/bhagwati-web/grpc-client/releases)
-2. Make it executable: `chmod +x grpc-client`
-3. Run: `./grpc-client`
+1. Download the binary for your platform from [Releases](https://github.com/bhagwati-web/pulse/releases)
+2. Make it executable: `chmod +x pulse-darwin-amd64` (or your platform binary)
+3. Run: `./pulse-darwin-amd64`
 4. Open browser to: `http://localhost:50051`
 
 ## UI Features Guide
@@ -115,20 +115,20 @@ The UI will display the response and any metadata returned by the server.
 
 ### Clone and Build
 ```bash
-cd go-grpc-client
+cd web-api
 go mod tidy
-go build -o grpc-client .
+go build -o pulse .
 ```
 
 ### Run the Application
 ```bash
-./grpc-client
+./pulse
 ```
 
 The server will start on port 50051 by default. You can change this by setting the `PORT` environment variable:
 
 ```bash
-PORT=3000 ./grpc-client
+PORT=3000 ./pulse
 ```
 
 ## Configuration
@@ -145,7 +145,7 @@ PORT=3000 ./grpc-client
 
 ### Command Line Flags
 ```bash
-./grpc-client \
+./pulse \
   --port=3000 \
   --collection-path=/custom/path \
   --tls-cert=/path/to/cert.pem \
@@ -168,7 +168,7 @@ tls:
   key_file: ""
 
 storage:
-  collection_path: "~/.grpc-client"
+  collection_path: "~/.pulse"
   max_collections: 1000
 
 logging:
@@ -334,7 +334,7 @@ Comparison with other popular gRPC clients:
 | GUI Request Builder      | ✅         | ❌      | ❌       | ❌      | ✅      |
 | No Installation Required | ✅         | ❌      | ❌       | ❌      | ❌      |
 
-### Why Choose gRPC Client?
+### Why Choose Pulse?
 
 1. **Easy to Use**: Web-based interface with intuitive controls
 2. **No Dependencies**: Single binary deployment
@@ -355,8 +355,8 @@ Comparison with other popular gRPC clients:
 
 ```bash
 # Clone the repository
-git clone https://github.com/bhagwati-web/grpc-client.git
-cd grpc-client
+git clone https://github.com/bhagwati-web/pulse.git
+cd pulse
 
 # Option 1: Use the build script (recommended)
 ./build.sh
@@ -369,14 +369,14 @@ npm run build
 
 # 2. Copy to Go static directory
 cd ..
-cp -r web-ui/dist/* go-grpc-client/static/
+cp -r web-ui/dist/* web-api/static/
 
 # 3. Build Go binary
-cd go-grpc-client
-go build -o grpc-client main.go
+cd web-api
+go build -o pulse main.go
 
 # 4. Run
-./grpc-client
+./pulse
 ```
 
 ## Docker Support
@@ -384,8 +384,8 @@ go build -o grpc-client main.go
 Build and run with Docker:
 
 ```bash
-docker build -t grpc-client .
-docker run -p 50051:50051 grpc-client
+docker build -t pulse .
+docker run -p 50051:50051 pulse
 ```
 
 ## Security and Authentication
@@ -452,7 +452,7 @@ The client supports both secure (TLS) and insecure gRPC connections:
    - Verify no other service is using port 50051
 
 4. **Permission denied when running binary**
-   - Run `chmod +x grpc-client` to make the binary executable
+   - Run `chmod +x pulse-darwin-amd64` (or your platform binary) to make it executable
    - On macOS, you might need to allow the application in Security & Privacy settings
 
 ### Getting Help
@@ -464,7 +464,7 @@ The client supports both secure (TLS) and insecure gRPC connections:
 ### Debug Mode
 Run the server in debug mode:
 ```bash
-GIN_MODE=debug ./grpc-client
+GIN_MODE=debug ./pulse
 ```
 
 ### Network Debugging
@@ -482,13 +482,13 @@ GIN_MODE=debug ./grpc-client
 1. **Request/Response Inspection**
    ```bash
    # Enable detailed logging
-   ./grpc-client --debug
+   ./pulse --debug
    ```
 
 2. **Memory Profiling**
    ```bash
    # Enable pprof endpoint
-   ./grpc-client --pprof
+   ./pulse --pprof
    
    # Analyze memory usage
    go tool pprof http://localhost:50051/debug/pprof/heap
@@ -497,16 +497,16 @@ GIN_MODE=debug ./grpc-client
 3. **Performance Tracing**
    ```bash
    # Enable tracing
-   ./grpc-client --trace
+   ./pulse --trace
    
    # View traces at
    http://localhost:50051/debug/traces
    ```
 
 ### Log File Locations
-- Application logs: `/var/log/grpc-client/app.log`
-- Error logs: `/var/log/grpc-client/error.log`
-- Access logs: `/var/log/grpc-client/access.log`
+- Application logs: `/var/log/pulse/app.log`
+- Error logs: `/var/log/pulse/error.log`
+- Access logs: `/var/log/pulse/access.log`
 
 ## Contributing
 

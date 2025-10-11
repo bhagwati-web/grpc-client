@@ -95,7 +95,7 @@ export function AppHeader({ title, breadcrumbs = [], showSidebar = true }: AppHe
                     </Button>
                 </a>
                 <a
-                    href="https://github.com/bhagwati-web/grpc-client"
+                    href="https://github.com/bhagwati-web/pulse"
                     target="_blank"
                     rel="noopener noreferrer"
                 >

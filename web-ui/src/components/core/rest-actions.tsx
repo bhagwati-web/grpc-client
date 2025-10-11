@@ -65,7 +65,6 @@ export function RestActions({
     url,
     headers,
     body,
-    timeout,
     loading,
     onSend,
     currentRequestId,

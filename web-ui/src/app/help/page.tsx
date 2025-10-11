@@ -24,7 +24,7 @@ export default function HelpPage() {
                             Installation & Setup
                         </CardTitle>
                         <CardDescription>
-                            Multiple ways to install and run the gRPC Client
+                            Multiple ways to install and run Pulse
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -36,12 +36,14 @@ export default function HelpPage() {
                                 <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
                                     <code className="text-sm">
                                         # Install via Homebrew<br/>
-                                        brew tap bhagwati-web/grpc-client<br/>
-                                        brew install grpc-client<br/><br/>
-                                        # Start the server<br/>
-                                        grpcstart<br/><br/>
+                                        brew tap bhagwati-web/pulse<br/>
+                                        brew install pulse<br/><br/>
+                                        # Start the server (background)<br/>
+                                        pulse-start<br/><br/>
+                                        # Check status<br/>
+                                        pulse-status<br/><br/>
                                         # Stop the server<br/>
-                                        grpcstop
+                                        pulse-stop
                                     </code>
                                 </div>
                             </div>
@@ -51,9 +53,9 @@ export default function HelpPage() {
                                     Option 2: Direct Binary
                                 </h4>
                                 <ol className="text-sm text-muted-foreground space-y-1">
-                                    <li>1. Download binary from <a href="https://github.com/bhagwati-web/grpc-client/releases" className="text-blue-600 hover:underline" target="_blank" rel="noopener">GitHub Releases</a></li>
-                                    <li>2. Make executable: <code className="bg-muted px-1 py-0.5 rounded">chmod +x grpc-client</code></li>
-                                    <li>3. Run: <code className="bg-muted px-1 py-0.5 rounded">./grpc-client</code></li>
+                                    <li>1. Download binary from <a href="https://github.com/bhagwati-web/pulse/releases" className="text-blue-600 hover:underline" target="_blank" rel="noopener">GitHub Releases</a></li>
+                                    <li>2. Make executable: <code className="bg-muted px-1 py-0.5 rounded">chmod +x pulse-darwin-amd64</code></li>
+                                    <li>3. Run: <code className="bg-muted px-1 py-0.5 rounded">./pulse-darwin-amd64</code></li>
                                     <li>4. Open: <code className="bg-muted px-1 py-0.5 rounded">http://localhost:50051</code></li>
                                 </ol>
                             </div>
@@ -279,7 +281,7 @@ export default function HelpPage() {
                                     Permission denied when running binary
                                 </h4>
                                 <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                                    <li>• Run <code className="bg-muted px-1 py-0.5 rounded">chmod +x grpc-client</code> to make executable</li>
+                                    <li>• Run <code className="bg-muted px-1 py-0.5 rounded">chmod +x pulse</code> to make executable</li>
                                     <li>• On macOS, allow the application in Security & Privacy settings</li>
                                     <li>• Check if antivirus software is blocking execution</li>
                                 </ul>
@@ -291,7 +293,7 @@ export default function HelpPage() {
                                 </h4>
                                 <p className="text-sm text-muted-foreground mt-1 mb-2">Run server with detailed logging:</p>
                                 <div className="bg-gray-50 dark:bg-gray-900 p-2 rounded-md">
-                                    <code className="text-sm">GIN_MODE=debug ./grpc-client</code>
+                                    <code className="text-sm">GIN_MODE=debug ./pulse</code>
                                 </div>
                             </div>
                         </div>
@@ -313,7 +315,7 @@ export default function HelpPage() {
                         <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-4">
                             <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">💡 Why Use REST API?</h4>
                             <p className="text-sm text-blue-700 dark:text-blue-300">
-                                The gRPC Client exposes all functionality through REST endpoints, making it perfect for CLI tools, 
+                                Pulse exposes all functionality through REST endpoints, making it perfect for CLI tools, 
                                 custom frontends, CI/CD pipelines, and integration with other applications.
                             </p>
                         </div>
@@ -699,7 +701,7 @@ async function manageWorkspace() {
                                 </h4>
                                 <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
                                     <li>• All data stays local - no cloud data collection</li>
-                                    <li>• Collections stored locally in ~/.grpc-client/</li>
+                                    <li>• Collections stored locally in ~/.pulse/</li>
                                     <li>• Enable TLS for secure server communication</li>
                                     <li>• Store sensitive metadata in collections with restricted permissions</li>
                                 </ul>
@@ -780,7 +782,7 @@ async function manageWorkspace() {
                             <Button 
                                 variant="outline" 
                                 className="justify-start h-auto p-4"
-                                onClick={() => openExternalLink('https://github.com/bhagwati-web/grpc-client')}
+                                onClick={() => openExternalLink('https://github.com/bhagwati-web/pulse')}
                             >
                                 <div className="flex items-center gap-3">
                                     <ExternalLink className="h-4 w-4" />
@@ -794,7 +796,7 @@ async function manageWorkspace() {
                             <Button 
                                 variant="outline" 
                                 className="justify-start h-auto p-4"
-                                onClick={() => openExternalLink('https://github.com/bhagwati-web/grpc-client/releases')}
+                                onClick={() => openExternalLink('https://github.com/bhagwati-web/pulse/releases')}
                             >
                                 <div className="flex items-center gap-3">
                                     <ExternalLink className="h-4 w-4" />
