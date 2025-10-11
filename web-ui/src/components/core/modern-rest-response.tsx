@@ -42,11 +42,11 @@ interface ModernRestResponseProps {
 }
 
 const getStatusColor = (statusCode: number): string => {
-    if (statusCode >= 200 && statusCode < 300) return "text-green-600 bg-green-50 border-green-200";
-    if (statusCode >= 300 && statusCode < 400) return "text-blue-600 bg-blue-50 border-blue-200";
-    if (statusCode >= 400 && statusCode < 500) return "text-orange-600 bg-orange-50 border-orange-200";
-    if (statusCode >= 500) return "text-red-600 bg-red-50 border-red-200";
-    return "text-gray-600 bg-gray-50 border-gray-200";
+    if (statusCode >= 200 && statusCode < 300) return "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800";
+    if (statusCode >= 300 && statusCode < 400) return "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800";
+    if (statusCode >= 400 && statusCode < 500) return "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/50 border-orange-200 dark:border-orange-800";
+    if (statusCode >= 500) return "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800";
+    return "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-950/50 border-gray-200 dark:border-gray-800";
 };
 
 const getStatusIcon = (statusCode: number) => {
@@ -129,9 +129,9 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
     const headerCount = Object.keys(response.headers).length;
 
     return (
-        <div className="w-full bg-white border rounded-lg shadow-sm">
+        <div className="w-full bg-background border rounded-lg shadow-sm">
             {/* Response Status Header */}
-            <div className="px-6 py-4 border-b bg-gray-50/50">
+            <div className="px-6 py-4 border-b bg-muted/50">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-medium ${getStatusColor(response.statusCode)}`}>
@@ -140,7 +140,7 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
                             <span className="text-sm">{response.status}</span>
                         </div>
                         
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                                 <Clock className="w-4 h-4" />
                                 <span className="font-mono">{response.timing.total}ms</span>
@@ -207,13 +207,13 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
                     <TabsList className="grid w-full grid-cols-4 h-auto bg-transparent p-0 space-x-0">
                         <TabsTrigger 
                             value="body"
-                            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none border-b-2 border-transparent"
+                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent"
                         >
                             Body
                         </TabsTrigger>
                         <TabsTrigger 
                             value="headers"
-                            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none border-b-2 border-transparent"
+                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent"
                         >
                             Headers
                             <Badge variant="secondary" className="ml-2 text-xs">
@@ -222,13 +222,13 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
                         </TabsTrigger>
                         <TabsTrigger 
                             value="timing"
-                            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none border-b-2 border-transparent"
+                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent"
                         >
                             Timing
                         </TabsTrigger>
                         <TabsTrigger 
                             value="raw"
-                            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none border-b-2 border-transparent"
+                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent"
                         >
                             Raw
                         </TabsTrigger>
@@ -238,9 +238,9 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
                     <TabsContent value="body" className="mt-6">
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-medium text-gray-700">Response Body</h4>
+                                <h4 className="text-sm font-medium text-foreground">Response Body</h4>
                                 <div className="flex items-center gap-3">
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-muted-foreground">
                                         {formatBytes(responseSize)}
                                     </div>
                                     <Button
@@ -257,7 +257,7 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
                                 </div>
                             </div>
                             
-                            <div className="w-full border rounded-lg overflow-hidden">
+                            <div className="w-full border border-border rounded-lg overflow-hidden">
                                 <CodeMirror
                                     value={prettyPrint ? prettyPrintJson(response.body) : JSON.stringify(response.body)}
                                     extensions={[json(), ...(lineWrap ? [EditorView.lineWrapping] : [])]}
@@ -286,7 +286,7 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
                     <TabsContent value="headers" className="mt-6">
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-medium text-gray-700">Response Headers</h4>
+                                <h4 className="text-sm font-medium text-foreground">Response Headers</h4>
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -299,11 +299,11 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
 
                             <div className="space-y-2">
                                 {Object.entries(response.headers).map(([key, values]) => (
-                                    <div key={key} className="grid grid-cols-3 gap-4 py-2 px-3 bg-gray-50 rounded-lg">
-                                        <div className="text-sm font-medium text-gray-700 font-mono">
+                                    <div key={key} className="grid grid-cols-3 gap-4 py-2 px-3 bg-muted rounded-lg">
+                                        <div className="text-sm font-medium text-foreground font-mono">
                                             {key}
                                         </div>
-                                        <div className="col-span-2 text-sm text-gray-600 font-mono break-all">
+                                        <div className="col-span-2 text-sm text-muted-foreground font-mono break-all">
                                             {Array.isArray(values) ? values.join(', ') : values}
                                         </div>
                                     </div>
@@ -311,7 +311,7 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
                             </div>
 
                             {Object.keys(response.headers).length === 0 && (
-                                <div className="text-center py-8 text-gray-400">
+                                <div className="text-center py-8 text-muted-foreground">
                                     <p>No response headers</p>
                                 </div>
                             )}
@@ -321,40 +321,40 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
                     {/* Timing Information */}
                     <TabsContent value="timing" className="mt-6">
                         <div className="space-y-4">
-                            <h4 className="text-sm font-medium text-gray-700">Request Timing</h4>
+                            <h4 className="text-sm font-medium text-foreground">Request Timing</h4>
                             
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                                    <div className="text-2xl font-mono font-bold text-blue-600">
+                                <div className="bg-muted rounded-lg p-4 text-center">
+                                    <div className="text-2xl font-mono font-bold text-blue-600 dark:text-blue-400">
                                         {response.timing.total}ms
                                     </div>
-                                    <div className="text-sm text-gray-500 mt-1">Total Time</div>
+                                    <div className="text-sm text-muted-foreground mt-1">Total Time</div>
                                 </div>
                                 
                                 {response.timing.dns !== undefined && (
-                                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                                        <div className="text-2xl font-mono font-bold text-green-600">
+                                    <div className="bg-muted rounded-lg p-4 text-center">
+                                        <div className="text-2xl font-mono font-bold text-green-600 dark:text-green-400">
                                             {response.timing.dns}ms
                                         </div>
-                                        <div className="text-sm text-gray-500 mt-1">DNS Lookup</div>
+                                        <div className="text-sm text-muted-foreground mt-1">DNS Lookup</div>
                                     </div>
                                 )}
                                 
                                 {response.timing.connection !== undefined && (
-                                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                                        <div className="text-2xl font-mono font-bold text-orange-600">
+                                    <div className="bg-muted rounded-lg p-4 text-center">
+                                        <div className="text-2xl font-mono font-bold text-orange-600 dark:text-orange-400">
                                             {response.timing.connection}ms
                                         </div>
-                                        <div className="text-sm text-gray-500 mt-1">Connection</div>
+                                        <div className="text-sm text-muted-foreground mt-1">Connection</div>
                                     </div>
                                 )}
                                 
                                 {response.timing.firstByte !== undefined && (
-                                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                                        <div className="text-2xl font-mono font-bold text-purple-600">
+                                    <div className="bg-muted rounded-lg p-4 text-center">
+                                        <div className="text-2xl font-mono font-bold text-purple-600 dark:text-purple-400">
                                             {response.timing.firstByte}ms
                                         </div>
-                                        <div className="text-sm text-gray-500 mt-1">First Byte</div>
+                                        <div className="text-sm text-muted-foreground mt-1">First Byte</div>
                                     </div>
                                 )}
                             </div>
@@ -365,7 +365,7 @@ export function ModernRestResponse({ response }: ModernRestResponseProps) {
                     <TabsContent value="raw" className="mt-6">
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-medium text-gray-700">Raw Response</h4>
+                                <h4 className="text-sm font-medium text-foreground">Raw Response</h4>
                                 <Button
                                     variant="outline"
                                     size="sm"

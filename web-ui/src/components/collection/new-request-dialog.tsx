@@ -71,13 +71,13 @@ interface NewRequestDialogProps {
 }
 
 const REST_METHODS: { value: RestMethod; label: string; color: string }[] = [
-  { value: "GET", label: "GET", color: "bg-blue-100 text-blue-800" },
-  { value: "POST", label: "POST", color: "bg-green-100 text-green-800" },
-  { value: "PUT", label: "PUT", color: "bg-orange-100 text-orange-800" },
-  { value: "DELETE", label: "DELETE", color: "bg-red-100 text-red-800" },
-  { value: "PATCH", label: "PATCH", color: "bg-purple-100 text-purple-800" },
-  { value: "HEAD", label: "HEAD", color: "bg-gray-100 text-gray-800" },
-  { value: "OPTIONS", label: "OPTIONS", color: "bg-yellow-100 text-yellow-800" },
+  { value: "GET", label: "GET", color: "bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-400" },
+  { value: "POST", label: "POST", color: "bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-400" },
+  { value: "PUT", label: "PUT", color: "bg-orange-100 dark:bg-orange-950/50 text-orange-800 dark:text-orange-400" },
+  { value: "DELETE", label: "DELETE", color: "bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-400" },
+  { value: "PATCH", label: "PATCH", color: "bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-400" },
+  { value: "HEAD", label: "HEAD", color: "bg-gray-100 dark:bg-gray-950/50 text-gray-800 dark:text-gray-400" },
+  { value: "OPTIONS", label: "OPTIONS", color: "bg-yellow-100 dark:bg-yellow-950/50 text-yellow-800 dark:text-yellow-400" },
 ];
 
 const DEFAULT_REST_HEADERS: Header[] = [
@@ -923,7 +923,7 @@ function HeaderManager({ headers, onUpdate, onRemove, onAdd, title }: HeaderMana
       
       {headers.length > 0 && (
         <div className="space-y-2">
-          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
             <div className="col-span-1"></div>
             <div className="col-span-5">Key</div>
             <div className="col-span-5">Value</div>
@@ -936,7 +936,7 @@ function HeaderManager({ headers, onUpdate, onRemove, onAdd, title }: HeaderMana
                   type="checkbox"
                   checked={header.enabled}
                   onChange={(e) => onUpdate(index, 'enabled', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
                 />
               </div>
               <div className="col-span-5">
@@ -962,7 +962,7 @@ function HeaderManager({ headers, onUpdate, onRemove, onAdd, title }: HeaderMana
                   size="sm"
                   className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <Trash2 className="w-4 h-4 text-red-500" />
+                  <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </div>
             </div>
@@ -997,7 +997,7 @@ function ParameterManager({ params, onUpdate, onRemove, onAdd }: ParameterManage
       
       {params.length > 0 && (
         <div className="space-y-2">
-          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
             <div className="col-span-1"></div>
             <div className="col-span-5">Key</div>
             <div className="col-span-5">Value</div>
@@ -1010,7 +1010,7 @@ function ParameterManager({ params, onUpdate, onRemove, onAdd }: ParameterManage
                   type="checkbox"
                   checked={param.enabled}
                   onChange={(e) => onUpdate(index, 'enabled', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
                 />
               </div>
               <div className="col-span-5">
@@ -1036,7 +1036,7 @@ function ParameterManager({ params, onUpdate, onRemove, onAdd }: ParameterManage
                   size="sm"
                   className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <Trash2 className="w-4 h-4 text-red-500" />
+                  <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </div>
             </div>

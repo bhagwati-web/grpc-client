@@ -171,7 +171,7 @@ export function RestBodyEditor({
                                 {BODY_TYPES.map(type => (
                                     <SelectItem key={type.value} value={type.value}>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs font-mono bg-gray-100 px-1 rounded">
+                                            <span className="text-xs font-mono bg-muted text-muted-foreground px-1 rounded">
                                                 {type.icon}
                                             </span>
                                             {type.label}
@@ -186,11 +186,11 @@ export function RestBodyEditor({
                     {isValid !== null && (
                         <div className="flex items-center gap-1 text-sm">
                             {isValid ? (
-                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400" />
                             ) : (
-                                <AlertCircle className="w-4 h-4 text-red-500" />
+                                <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400" />
                             )}
-                            <span className={isValid ? "text-green-600" : "text-red-600"}>
+                            <span className={isValid ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                                 {validationMessage}
                             </span>
                         </div>
@@ -223,7 +223,7 @@ export function RestBodyEditor({
             </div>
 
             {/* CodeMirror Editor */}
-            <div className="relative border rounded-lg overflow-hidden">
+            <div className="relative border border-border rounded-lg overflow-hidden">
                 <CodeMirror
                     value={value}
                     onChange={(val) => onChange(val)}
@@ -246,14 +246,14 @@ export function RestBodyEditor({
                 />
                 
                 {/* Language indicator */}
-                <div className="absolute bottom-2 right-2 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs font-mono text-gray-600 dark:text-gray-300">
+                <div className="absolute bottom-2 right-2 bg-muted text-muted-foreground px-2 py-1 rounded text-xs font-mono">
                     {currentBodyType.label}
                 </div>
             </div>
 
             {/* Content info */}
             {value.trim() && (
-                <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center gap-4">
                         <span>Lines: {value.split('\n').length}</span>
                         <span>Characters: {value.length}</span>

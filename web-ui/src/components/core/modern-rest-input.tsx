@@ -38,13 +38,13 @@ interface QueryParam {
 }
 
 const HTTP_METHODS = [
-    { value: "GET", color: "text-blue-600 bg-blue-50 border-blue-200" },
-    { value: "POST", color: "text-green-600 bg-green-50 border-green-200" },
-    { value: "PUT", color: "text-orange-600 bg-orange-50 border-orange-200" },
-    { value: "DELETE", color: "text-red-600 bg-red-50 border-red-200" },
-    { value: "PATCH", color: "text-purple-600 bg-purple-50 border-purple-200" },
-    { value: "HEAD", color: "text-gray-600 bg-gray-50 border-gray-200" },
-    { value: "OPTIONS", color: "text-yellow-600 bg-yellow-50 border-yellow-200" }
+    { value: "GET", color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800" },
+    { value: "POST", color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800" },
+    { value: "PUT", color: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/50 border-orange-200 dark:border-orange-800" },
+    { value: "DELETE", color: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800" },
+    { value: "PATCH", color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 border-purple-200 dark:border-purple-800" },
+    { value: "HEAD", color: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-950/50 border-gray-200 dark:border-gray-800" },
+    { value: "OPTIONS", color: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/50 border-yellow-200 dark:border-yellow-800" }
 ];
 
 export function ModernRestInput() {
@@ -264,9 +264,9 @@ export function ModernRestInput() {
     const methodConfig = HTTP_METHODS.find(m => m.value === method) || HTTP_METHODS[0];
 
     return (
-        <div className="space-y-0 bg-white border rounded-lg shadow-sm">
+        <div className="space-y-0 bg-background border rounded-lg shadow-sm">
             {/* Request URL Bar - Postman Style */}
-            <div className="flex items-center gap-2 p-4 border-b bg-gray-50/50">
+            <div className="flex items-center gap-2 p-4 border-b bg-muted/50">
                 <div className="w-28">
                     <Select value={method} onValueChange={setMethod}>
                         <SelectTrigger className={`h-10 border-2 font-medium ${methodConfig.color}`}>
@@ -275,7 +275,7 @@ export function ModernRestInput() {
                         <SelectContent>
                             {HTTP_METHODS.map(m => (
                                 <SelectItem key={m.value} value={m.value}>
-                                    <span className={`font-medium ${m.color.split(' ')[0]}`}>
+                                    <span className={`font-medium ${m.color.split(' ')[0]} ${m.color.split(' ')[1]}`}>
                                         {m.value}
                                     </span>
                                 </SelectItem>
@@ -289,14 +289,14 @@ export function ModernRestInput() {
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                         placeholder="Enter request URL"
-                        className="h-10 text-sm font-mono border-2 focus:border-blue-500"
+                        className="h-10 text-sm font-mono border-2 focus:border-primary"
                     />
                 </div>
 
                 <Button
                     onClick={sendRestRequest}
                     disabled={loading || !url}
-                    className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                    className="h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
                 >
                     <Send className="w-4 h-4 mr-2" />
                     {loading ? 'Sending...' : 'Send'}
@@ -309,20 +309,20 @@ export function ModernRestInput() {
                     <TabsList className="grid w-full grid-cols-4 h-auto bg-transparent p-0 space-x-0">
                         <TabsTrigger 
                             value="params" 
-                            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none border-b-2 border-transparent"
+                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent"
                         >
                             Params {params.filter(p => p.enabled && p.key).length > 0 && (
-                                <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                <span className="ml-1 px-1.5 py-0.5 bg-primary/20 text-primary text-xs rounded-full">
                                     {params.filter(p => p.enabled && p.key).length}
                                 </span>
                             )}
                         </TabsTrigger>
                         <TabsTrigger 
                             value="headers"
-                            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none border-b-2 border-transparent"
+                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent"
                         >
                             Headers {headers.filter(h => h.enabled && h.key).length > 0 && (
-                                <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                <span className="ml-1 px-1.5 py-0.5 bg-primary/20 text-primary text-xs rounded-full">
                                     {headers.filter(h => h.enabled && h.key).length}
                                 </span>
                             )}
@@ -330,13 +330,13 @@ export function ModernRestInput() {
                         <TabsTrigger 
                             value="body"
                             disabled={!["POST", "PUT", "PATCH"].includes(method)}
-                            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none border-b-2 border-transparent disabled:text-gray-400"
+                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent disabled:text-muted-foreground"
                         >
                             Body
                         </TabsTrigger>
                         <TabsTrigger 
                             value="settings"
-                            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none border-b-2 border-transparent"
+                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent"
                         >
                             <Settings className="w-4 h-4" />
                         </TabsTrigger>
@@ -345,12 +345,12 @@ export function ModernRestInput() {
                     {/* Query Parameters */}
                     <TabsContent value="params" className="mt-4 space-y-3">
                         <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-600">Query parameters will be appended to the URL</p>
+                            <p className="text-sm text-muted-foreground">Query parameters will be appended to the URL</p>
                         </div>
                         
                         {params.length > 0 && (
                             <div className="space-y-2">
-                                <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                     <div className="col-span-1"></div>
                                     <div className="col-span-5">Key</div>
                                     <div className="col-span-5">Value</div>
@@ -363,7 +363,7 @@ export function ModernRestInput() {
                                                 type="checkbox"
                                                 checked={param.enabled}
                                                 onChange={(e) => updateParam(index, 'enabled', e.target.checked)}
-                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                                className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
                                             />
                                         </div>
                                         <div className="col-span-5">
@@ -389,7 +389,7 @@ export function ModernRestInput() {
                                                 size="sm"
                                                 className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                             >
-                                                <Trash2 className="w-4 h-4 text-red-500" />
+                                                <Trash2 className="w-4 h-4 text-destructive" />
                                             </Button>
                                         </div>
                                     </div>
@@ -398,7 +398,7 @@ export function ModernRestInput() {
                         )}
                         
                         {params.length === 0 && (
-                            <div className="text-center py-8 text-gray-400">
+                            <div className="text-center py-8 text-muted-foreground">
                                 <p>No query parameters added yet</p>
                                 <p className="text-sm">Click "Add Param" to add query parameters</p>
                             </div>
@@ -416,11 +416,11 @@ export function ModernRestInput() {
                     {/* Headers */}
                     <TabsContent value="headers" className="mt-4 space-y-3">
                         <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-600">Headers will be sent with your request</p>
+                            <p className="text-sm text-muted-foreground">Headers will be sent with your request</p>
                         </div>
                         
                         <div className="space-y-2">
-                            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                 <div className="col-span-1"></div>
                                 <div className="col-span-5">Key</div>
                                 <div className="col-span-5">Value</div>
@@ -433,7 +433,7 @@ export function ModernRestInput() {
                                             type="checkbox"
                                             checked={header.enabled}
                                             onChange={(e) => updateHeader(index, 'enabled', e.target.checked)}
-                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                            className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
                                         />
                                     </div>
                                     <div className="col-span-5">
@@ -459,7 +459,7 @@ export function ModernRestInput() {
                                             size="sm"
                                             className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
-                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                            <Trash2 className="w-4 h-4 text-destructive" />
                                         </Button>
                                     </div>
                                 </div>
@@ -497,7 +497,7 @@ export function ModernRestInput() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <Label>Request Timeout</Label>
-                                    <p className="text-sm text-gray-500">Maximum time to wait for response</p>
+                                    <p className="text-sm text-muted-foreground">Maximum time to wait for response</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Input 
@@ -507,7 +507,7 @@ export function ModernRestInput() {
                                         min={1}
                                         max={300}
                                     />
-                                    <span className="text-sm text-gray-500">seconds</span>
+                                    <span className="text-sm text-muted-foreground">seconds</span>
                                 </div>
                             </div>
                         </div>
@@ -516,7 +516,7 @@ export function ModernRestInput() {
             </div>
 
             {/* Actions Bar */}
-            <div className="px-4 py-3 bg-gray-50 border-t">
+            <div className="px-4 py-3 bg-muted/50 border-t">
                 <RestActions 
                     method={method}
                     url={buildFullUrl()}

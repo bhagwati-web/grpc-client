@@ -256,7 +256,7 @@ export function GrpcServerInput() {
                                                             <span className="font-medium truncate">
                                                                 {method.split('.').pop()}
                                                             </span>
-                                                            <span className="text-xs text-gray-500 truncate">
+                                                            <span className="text-xs text-muted-foreground truncate">
                                                                 {method}
                                                             </span>
                                                         </div>
@@ -288,7 +288,7 @@ export function GrpcServerInput() {
                                                                                 <div className="font-medium truncate" title={method.name}>
                                                                                     {method.name}
                                                                                 </div>
-                                                                                <small className="text-gray-500 truncate text-xs" title={method.fullName}>
+                                                                                <small className="text-muted-foreground truncate text-xs" title={method.fullName}>
                                                                                     {method.fullName}
                                                                                 </small>
                                                                             </div>
@@ -309,14 +309,14 @@ export function GrpcServerInput() {
                         {!host && <div className="mt-3 p-3 border rounded-lg">
                             <p>
                                 <small className="leading-relaxed">
-                                    <strong>Getting Started:</strong> Enter a gRPC endpoint to begin (e.g., <code className="bg-blue-100 px-1 py-0.5 rounded text-blue-800">example.com:443</code>).
-                                    The app will automatically fetch available <code className="bg-blue-100 px-1 py-0.5 rounded text-blue-800">services</code> and <code className="bg-blue-100 px-1 py-0.5 rounded text-blue-800">methods</code>.
+                                    <strong>Getting Started:</strong> Enter a gRPC endpoint to begin (e.g., <code className="bg-muted text-foreground px-1 py-0.5 rounded">example.com:443</code>).
+                                    The app will automatically fetch available <code className="bg-muted text-foreground px-1 py-0.5 rounded">services</code> and <code className="bg-muted text-foreground px-1 py-0.5 rounded">methods</code>.
                                     If auto-discovery fails, correct the url and try specifying a different port by appending it to the endpoint.
                                 </small>
                             </p>
                             <p>
                                 <small className="leading-relaxed">
-                                    To stop it simply run the <code className="bg-blue-100 px-1 py-0.5 rounded text-blue-800">grpcstop</code> command in your terminal anywhere to gracefully stop the server, it does not require any specific directory or terminal where you have started the server.
+                                    To stop it simply run the <code className="bg-muted text-foreground px-1 py-0.5 rounded">grpcstop</code> command in your terminal anywhere to gracefully stop the server, it does not require any specific directory or terminal where you have started the server.
                                 </small>
                             </p>
                         </div>}

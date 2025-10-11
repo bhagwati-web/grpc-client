@@ -38,7 +38,7 @@ export function CodePreviewer({ response, readOnly, onDataChange, height }: { re
     const codeMirrorTheme = effectiveTheme === "dark" ? githubDark : githubLight;
 
     return (
-        <div className="grid w-full gap-2 rounded-xl border border-gray-300 overflow-hidden" ref={responseWrapper}>
+        <div className="grid w-full gap-2 rounded-xl border border-border overflow-hidden" ref={responseWrapper}>
             <CodeMirror
                 value={JSON.stringify(response || {}, null, 2)} // Initial value
                 extensions={[json()]} // JSON syntax highlighting
