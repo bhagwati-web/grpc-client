@@ -296,7 +296,8 @@ export function ModernRestInput() {
                 <Button
                     onClick={sendRestRequest}
                     disabled={loading || !url}
-                    className="h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                    variant="destructive"
+                    className="h-10 px-6 font-medium"
                 >
                     <Send className="w-4 h-4 mr-2" />
                     {loading ? 'Sending...' : 'Send'}

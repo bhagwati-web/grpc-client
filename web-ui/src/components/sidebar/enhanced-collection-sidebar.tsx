@@ -241,7 +241,7 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
   handleCloneRequest: (request: Request, collection: Collection) => void;
   handleDeleteRequest: (request: Request) => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const isReadOnly = isReadOnlyCollection(collection);

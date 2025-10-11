@@ -28,7 +28,7 @@ export function RestReflectionCard() {
 
             {/* Loading State */}
             {loading && (
-                <div className="bg-white border rounded-lg shadow-sm p-6">
+                <div className="bg-background border rounded-lg shadow-sm p-6">
                     <AppLoader message={loadingMessage} />
                 </div>
             )}

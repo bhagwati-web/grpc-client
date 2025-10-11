@@ -201,10 +201,10 @@ export function RequestBuilder() {
 
     return (
         <div className="flex flex-col w-full">
-            <Card className="flex-1 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700" ref={builderRef}>
+            <Card className="flex-1 bg-background border" ref={builderRef}>
                 <CardHeader>
                     <CardTitle className="flex justify-between">
-                        <div className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                        <div className="flex items-center gap-2 text-foreground">
                             <Wrench className="h-5 w-5" />
                             Build Request
                         </div>
@@ -216,7 +216,7 @@ export function RequestBuilder() {
                         </div>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 bg-gray-50 dark:bg-gray-800/50">
+                <CardContent className="space-y-2 bg-muted/50">
                     {serviceResponse.fields?.map((field: any, index: any) => (
                         <DynamicField
                             isRootElement={true}
