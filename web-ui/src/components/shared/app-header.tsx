@@ -64,6 +64,24 @@ export function AppHeader({ title, breadcrumbs = [], showSidebar = true }: AppHe
             </Breadcrumb>
             {/* Action Buttons */}
             <div className={'ml-auto flex items-center gap-4'}>
+                <div className="flex items-center gap-2 border rounded-md p-1">
+                    <a href="/dashboard" title="gRPC Testing">
+                        <Button
+                            variant={title.toLowerCase().includes('grpc') ? "default" : "ghost"}
+                            size="sm"
+                        >
+                            gRPC
+                        </Button>
+                    </a>
+                    <a href="/rest" title="REST API Testing">
+                        <Button
+                            variant={title.toLowerCase().includes('rest') ? "default" : "ghost"}
+                            size="sm"
+                        >
+                            REST
+                        </Button>
+                    </a>
+                </div>
                 <ThemeToggle />
                 <a
                     href="/help"

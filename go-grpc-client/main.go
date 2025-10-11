@@ -36,9 +36,10 @@ func main() {
 	grpcController := controllers.NewGrpcController()
 	reflectionController := controllers.NewReflectionController()
 	enhancedCollectionController := controllers.NewEnhancedCollectionController()
+	restController := controllers.NewRestController()
 
 	// Setup routes
-	setupRoutes(router, grpcController, reflectionController, enhancedCollectionController)
+	setupRoutes(router, grpcController, reflectionController, enhancedCollectionController, restController)
 
 	// Get port from environment or use default
 	port := os.Getenv("PORT")
@@ -57,6 +58,7 @@ func setupRoutes(
 	grpcController *controllers.GrpcController,
 	reflectionController *controllers.ReflectionController,
 	enhancedCollectionController *controllers.EnhancedCollectionController,
+	restController *controllers.RestController,
 ) {
 	// API routes must be defined BEFORE static routes to take precedence
 
@@ -65,6 +67,13 @@ func setupRoutes(
 	{
 		grpcGroup.GET("/", grpcController.DefaultEndpoint)
 		grpcGroup.POST("/call", grpcController.MakeGrpcCall)
+	}
+
+	// REST API routes
+	restGroup := router.Group("/rest")
+	{
+		restGroup.GET("/", restController.DefaultEndpoint)
+		restGroup.POST("/call", restController.MakeRestCall)
 	}
 
 	// Metadata/reflection routes

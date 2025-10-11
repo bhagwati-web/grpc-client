@@ -39,6 +39,7 @@ import { toast } from "@/hooks/use-toast";
 import { saveMethodData } from "@/utils/app-utils";
 import { NewCollectionDialog } from "@/components/collection/new-collection-dialog";
 import { SaveRequestDialog } from "@/components/collection/save-request-dialog";
+import { NewRequestDialog } from "@/components/collection/new-request-dialog";
 import { RenameCollectionDialog } from "@/components/collection/rename-collection-dialog";
 import {
   AlertDialog,
@@ -65,6 +66,20 @@ const isReadOnlyCollection = (collection: Collection): boolean => {
     collection.name.toLowerCase() === 'demo collection' ||
     // Only if description explicitly says it's read-only
     (collection.description?.toLowerCase().includes('read-only') ?? false);
+};
+
+// Helper function to get color for REST method
+const getRestMethodColor = (method: string): string => {
+  switch (method.toUpperCase()) {
+    case 'GET': return 'bg-blue-600';
+    case 'POST': return 'bg-green-600';
+    case 'PUT': return 'bg-orange-600';
+    case 'DELETE': return 'bg-red-600';
+    case 'PATCH': return 'bg-purple-600';
+    case 'HEAD': return 'bg-gray-600';
+    case 'OPTIONS': return 'bg-yellow-600';
+    default: return 'bg-gray-500';
+  }
 };
 
 // Enhanced types for the new system
@@ -156,8 +171,8 @@ function CollectionTreeItem({ collection, onRequestClick, activeRequestId, onAdd
                   <div className="h-2 w-2 bg-blue-600 dark:bg-blue-400 rounded-sm"></div>
                 </div>
               ) : (
-                <div className="h-4 w-4 rounded-sm bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                  <div className="h-2 w-2 bg-green-600 dark:bg-green-400 rounded-full"></div>
+                <div className={`h-4 w-4 rounded-sm flex items-center justify-center text-[8px] font-bold text-white ${getRestMethodColor(request.restConfig?.method || 'GET')}`}>
+                  {(request.restConfig?.method || 'GET').substring(0, 1)}
                 </div>
               )}
             </div>
@@ -352,6 +367,28 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
       toast({
         title: "Request Loaded",
         description: `Loaded "${request.name}" request`,
+      });
+    } else if (request.type === "rest" && request.restConfig) {
+      // Handle REST request loading
+      setServerInfo({
+        host: request.host,
+        method: `${request.restConfig.method} ${request.restConfig.url}`,
+        id: request.id,
+        type: 'rest',
+        restConfig: request.restConfig,
+        // For compatibility with gRPC context, provide empty metaData and message
+        metaData: {},
+        message: {},
+      });
+
+      setActiveRequestId(request.id);
+
+      // Optionally navigate to REST page if we're not already there
+      // This would require routing logic to navigate to /rest
+
+      toast({
+        title: "REST Request Loaded",
+        description: `Loaded "${request.name}" REST request`,
       });
     }
   };
@@ -564,16 +601,14 @@ export function EnhancedCollectionSidebar({ ...props }: React.ComponentProps<typ
         }}
       />
 
-      <SaveRequestDialog
+      <NewRequestDialog
         isOpen={showNewRequestDialog}
         onClose={() => {
           setShowNewRequestDialog(false);
           setInitialCollectionId(undefined);
         }}
-        serverInfo={{ host: '', method: '', message: {}, metaData: {} }} // Always fresh for sidebar
         collections={workspace?.collections || []}
         initialCollectionId={initialCollectionId}
-        prefillFromCurrent={false} // Explicitly set to false for fresh dialogs
         onSaved={() => {
           refreshWorkspaceData();
           setShowNewRequestDialog(false);

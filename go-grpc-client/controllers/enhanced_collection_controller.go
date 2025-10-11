@@ -416,6 +416,76 @@ func (ecc *EnhancedCollectionController) UpdateRequest(c *gin.Context) {
 		}
 	}
 
+	// Update REST config if provided
+	if restConfig, ok := updateData["restConfig"]; ok {
+		if restMap, ok := restConfig.(map[string]interface{}); ok {
+			if updatedRequest.RESTConfig == nil {
+				updatedRequest.RESTConfig = &models.RESTConfig{}
+			}
+
+			if method, ok := restMap["method"]; ok {
+				if methodStr, ok := method.(string); ok {
+					updatedRequest.RESTConfig.Method = methodStr
+				}
+			}
+
+			if url, ok := restMap["url"]; ok {
+				if urlStr, ok := url.(string); ok {
+					log.Printf("DEBUG: Updating URL from '%s' to '%s'", updatedRequest.RESTConfig.URL, urlStr)
+					updatedRequest.RESTConfig.URL = urlStr
+				}
+			}
+
+			if body, ok := restMap["body"]; ok {
+				updatedRequest.RESTConfig.Body = body
+			}
+
+			if headers, ok := restMap["headers"]; ok {
+				if headersSlice, ok := headers.([]interface{}); ok {
+					var restHeaders []models.RequestHeader
+					for _, item := range headersSlice {
+						if headerMap, ok := item.(map[string]interface{}); ok {
+							header := models.RequestHeader{}
+							if key, ok := headerMap["key"].(string); ok {
+								header.Key = key
+							}
+							if value, ok := headerMap["value"].(string); ok {
+								header.Value = value
+							}
+							if enabled, ok := headerMap["enabled"].(bool); ok {
+								header.Enabled = enabled
+							}
+							restHeaders = append(restHeaders, header)
+						}
+					}
+					updatedRequest.RESTConfig.Headers = restHeaders
+				}
+			}
+
+			if params, ok := restMap["params"]; ok {
+				if paramsSlice, ok := params.([]interface{}); ok {
+					var restParams []models.RequestHeader
+					for _, item := range paramsSlice {
+						if paramMap, ok := item.(map[string]interface{}); ok {
+							param := models.RequestHeader{}
+							if key, ok := paramMap["key"].(string); ok {
+								param.Key = key
+							}
+							if value, ok := paramMap["value"].(string); ok {
+								param.Value = value
+							}
+							if enabled, ok := paramMap["enabled"].(bool); ok {
+								param.Enabled = enabled
+							}
+							restParams = append(restParams, param)
+						}
+					}
+					updatedRequest.RESTConfig.Params = restParams
+				}
+			}
+		}
+	}
+
 	// Always update the timestamp
 	updatedRequest.UpdatedAt = time.Now()
 

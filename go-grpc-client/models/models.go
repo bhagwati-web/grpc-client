@@ -103,6 +103,31 @@ type Workspace struct {
 	UpdatedAt   time.Time    `json:"updatedAt"`
 }
 
+// REST API Request/Response models
+type RestRequest struct {
+	Method  string            `json:"method" binding:"required"` // GET, POST, PUT, DELETE, etc.
+	URL     string            `json:"url" binding:"required"`
+	Headers map[string]string `json:"headers,omitempty"`
+	Body    interface{}       `json:"body,omitempty"`
+	Timeout int               `json:"timeout,omitempty"` // seconds, default 30
+}
+
+type RestResponse struct {
+	StatusCode int                 `json:"statusCode"`
+	Status     string              `json:"status"`
+	Headers    map[string][]string `json:"headers"`
+	Body       interface{}         `json:"body"`
+	Timing     ResponseTiming      `json:"timing"`
+}
+
+type ResponseTiming struct {
+	Total      int64 `json:"total"`      // Total time in milliseconds
+	DNS        int64 `json:"dns"`        // DNS lookup time
+	Connection int64 `json:"connection"` // Connection time
+	TLS        int64 `json:"tls"`        // TLS handshake time
+	FirstByte  int64 `json:"firstByte"`  // Time to first byte
+}
+
 // Legacy support - Keep for backward compatibility
 type GrpcRequest struct {
 	Host     string            `json:"host" binding:"required"`
